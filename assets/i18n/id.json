@@ -22,5 +22,18 @@
   "gen.step2": "2. Desain",
   "gen.step3": "3. Unduh",
   "gen.staticMode": "QR Statis (Offline, tanpa server)",
-  "gen.dynamicMode": "QR Dinamis (Bisa diedit & dilacak)"
+  "gen.dynamicMode": "QR Dinamis (Bisa diedit & dilacak)",
+  "hero.statScans": "Total Scan Tercatat",
+  "hero.statTypes": "Tipe Konten & Modul",
+  "hero.statPrice": "Tanpa Paywall",
+  "who.title": "Untuk Siapa Your QR Code?",
+  "who.subtitle": "Dirancang khusus untuk kebutuhan nyata pendidikan, organisasi, dan usaha kecil di Indonesia.",
+  "who.pelajar": "Pelajar & Mahasiswa",
+  "who.ormawa": "Ormawa & Komunitas",
+  "who.sekolah": "Sekolah / Madrasah",
+  "who.umkm": "UMKM & Kuliner",
+  "footer.privacy": "Privasi",
+  "footer.terms": "Syarat",
+  "footer.help": "Bantuan",
+  "footer.bug": "Lapor Bug"
 }

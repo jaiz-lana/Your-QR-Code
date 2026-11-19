@@ -53,6 +53,37 @@
       const aturan = link.aturan || {};
       if (meta.os === 'iOS' && aturan.ios) return aturan.ios;
       if (meta.os === 'Android' && aturan.android) return aturan.android;
+
+      if (aturan.lang && aturan.langUrl) {
+        const userLang = (meta.bahasa || '').toLowerCase();
+        if (userLang.startsWith(aturan.lang.toLowerCase())) {
+          return aturan.langUrl;
+        }
+      }
+
+      if (aturan.timeUrl) {
+        const now = new Date();
+        const dayOk = !Array.isArray(aturan.days) || !aturan.days.length || aturan.days.includes(now.getDay());
+        let hourOk = true;
+        if (typeof aturan.hourStart === 'number' && typeof aturan.hourEnd === 'number') {
+          const h = now.getHours();
+          hourOk = aturan.hourStart <= aturan.hourEnd
+            ? (h >= aturan.hourStart && h <= aturan.hourEnd)
+            : (h >= aturan.hourStart || h <= aturan.hourEnd);
+        }
+        if (dayOk && hourOk) return aturan.timeUrl;
+      }
+
+      if (Array.isArray(aturan.abRoutes) && aturan.abRoutes.length >= 2) {
+        const roll = Math.random() * 100;
+        let acc = 0;
+        for (const r of aturan.abRoutes) {
+          acc += Number(r.pct) || 0;
+          if (roll <= acc && r.url) return r.url;
+        }
+        return aturan.abRoutes[0].url || link.tujuan;
+      }
+
       if (aturan.ab && Math.random() < 0.5) return aturan.ab;
       return link.tujuan;
     }

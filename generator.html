@@ -92,7 +92,7 @@
               </div>
             </div>
             <details style="border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.75rem;">
-              <summary style="font-weight:600;cursor:pointer;">Smart Link (Per OS / Bahasa / Jam) & A/B Rotasi</summary>
+              <summary style="font-weight:600;cursor:pointer;">Smart Link (OS / Bahasa / Jam &amp; Hari) &amp; Rotasi A/B</summary>
               <div class="form-grid" style="margin-top:0.75rem;">
                 <div class="form-row form-row-2">
                   <div class="field">
@@ -104,9 +104,53 @@
                     <input type="url" id="rule-android" class="input" placeholder="https://play.google.com/...">
                   </div>
                 </div>
+                <div class="form-row form-row-2">
+                  <div class="field">
+                    <label for="rule-lang">Kode Bahasa Browser (mis. en, id, ja)</label>
+                    <input type="text" id="rule-lang" class="input" placeholder="en">
+                  </div>
+                  <div class="field">
+                    <label for="rule-lang-url">URL Khusus Bahasa Tersebut</label>
+                    <input type="url" id="rule-lang-url" class="input" placeholder="https://contoh.com/en">
+                  </div>
+                </div>
+                <div class="form-row form-row-3">
+                  <div class="field">
+                    <label for="rule-days">Hari Aktif (0=Min..6=Sab, pisah koma)</label>
+                    <input type="text" id="rule-days" class="input" placeholder="1,2,3,4,5">
+                  </div>
+                  <div class="field">
+                    <label for="rule-hour-start">Jam Mulai (0–23)</label>
+                    <input type="number" id="rule-hour-start" class="input" min="0" max="23" placeholder="8">
+                  </div>
+                  <div class="field">
+                    <label for="rule-hour-end">Jam Selesai (0–23)</label>
+                    <input type="number" id="rule-hour-end" class="input" min="0" max="23" placeholder="17">
+                  </div>
+                </div>
                 <div class="field">
-                  <label for="rule-ab">URL Rotasi A/B (50% traffic)</label>
-                  <input type="url" id="rule-ab" class="input" placeholder="https://contoh.com/varian-b">
+                  <label for="rule-time-url">URL Khusus Jam &amp; Hari Aktif</label>
+                  <input type="url" id="rule-time-url" class="input" placeholder="https://contoh.com/jam-kerja">
+                </div>
+                <div style="border-top:1px solid var(--border-color);padding-top:0.75rem;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                    <strong style="font-size:0.88rem;">Rotasi A/B (2–3 URL, Total Harus 100%)</strong>
+                    <span id="ab-pct-status" class="field-hint">Opsional</span>
+                  </div>
+                  <div class="form-grid" style="gap:0.5rem;">
+                    <div style="display:flex;gap:0.4rem;">
+                      <input type="url" id="rule-ab-url-1" class="input" placeholder="URL Varian A (https://...)">
+                      <input type="number" id="rule-ab-pct-1" class="input" style="max-width:92px;" min="0" max="100" value="50" aria-label="Persentase Varian A">
+                    </div>
+                    <div style="display:flex;gap:0.4rem;">
+                      <input type="url" id="rule-ab-url-2" class="input" placeholder="URL Varian B (https://...)">
+                      <input type="number" id="rule-ab-pct-2" class="input" style="max-width:92px;" min="0" max="100" value="50" aria-label="Persentase Varian B">
+                    </div>
+                    <div style="display:flex;gap:0.4rem;">
+                      <input type="url" id="rule-ab-url-3" class="input" placeholder="URL Varian C (Opsional)">
+                      <input type="number" id="rule-ab-pct-3" class="input" style="max-width:92px;" min="0" max="100" value="0" aria-label="Persentase Varian C">
+                    </div>
+                  </div>
                 </div>
               </div>
             </details>
@@ -175,19 +219,25 @@
 
             <div class="form-row form-row-2">
               <div class="field">
-                <label for="des-eye-sq">Bentuk Mata Luar</label>
-                <select id="des-eye-sq" class="select">
-                  <option value="extra-rounded">Extra Rounded</option>
-                  <option value="square">Square</option>
-                  <option value="dot">Dot</option>
-                </select>
+                <label for="des-eye-sq">Bentuk &amp; Warna Mata Luar</label>
+                <div style="display:flex;gap:0.4rem;">
+                  <select id="des-eye-sq" class="select">
+                    <option value="extra-rounded">Extra Rounded</option>
+                    <option value="square">Square</option>
+                    <option value="dot">Dot</option>
+                  </select>
+                  <input type="color" id="des-eye-sq-color" class="color-input" value="#0f172a" aria-label="Warna Mata Luar">
+                </div>
               </div>
               <div class="field">
-                <label for="des-eye-dot">Bentuk Mata Dalam</label>
-                <select id="des-eye-dot" class="select">
-                  <option value="dot">Dot</option>
-                  <option value="square">Square</option>
-                </select>
+                <label for="des-eye-dot">Bentuk &amp; Warna Mata Dalam</label>
+                <div style="display:flex;gap:0.4rem;">
+                  <select id="des-eye-dot" class="select">
+                    <option value="dot">Dot</option>
+                    <option value="square">Square</option>
+                  </select>
+                  <input type="color" id="des-eye-dot-color" class="color-input" value="#0f172a" aria-label="Warna Mata Dalam">
+                </div>
               </div>
             </div>
 
@@ -198,6 +248,14 @@
                   <option value="none">Tanpa Logo</option>
                   <option value="wa">WhatsApp</option>
                   <option value="ig">Instagram</option>
+                  <option value="youtube">YouTube</option>
+                  <option value="tiktok">TikTok</option>
+                  <option value="telegram">Telegram</option>
+                  <option value="facebook">Facebook</option>
+                  <option value="x">X (Twitter)</option>
+                  <option value="linkedin">LinkedIn</option>
+                  <option value="maps">Google Maps</option>
+                  <option value="qris">QRIS</option>
                   <option value="link">Tautan</option>
                   <option value="store">Toko UMKM</option>
                 </select>
@@ -208,14 +266,18 @@
               </div>
             </div>
 
-            <div class="form-row form-row-2">
+            <div class="form-row form-row-3">
               <div class="field">
-                <label for="des-logo-size">Ukuran Logo (<span id="lbl-logo-size">32</span>%)</label>
-                <input type="range" id="des-logo-size" min="15" max="48" value="32">
+                <label for="des-logo-size">Ukuran Logo (<span id="lbl-logo-size">20</span>%)</label>
+                <input type="range" id="des-logo-size" min="10" max="25" value="20">
               </div>
               <div class="field">
                 <label for="des-margin">Quiet Zone / Margin (<span id="lbl-margin">12</span>px)</label>
                 <input type="range" id="des-margin" min="0" max="32" value="12">
+              </div>
+              <div class="field">
+                <label for="des-print-cm">Target Cetak (cm)</label>
+                <input type="number" id="des-print-cm" class="input" min="1" max="30" step="0.5" value="2.5">
               </div>
             </div>
 
@@ -225,13 +287,31 @@
                 <input type="text" id="des-frame-text" class="input" placeholder="Misal: SCAN SAYA / MENU">
               </div>
               <div class="field">
-                <label>Brand Kit</label>
+                <label for="des-frame-style">Gaya, Font, &amp; Warna Bingkai</label>
                 <div style="display:flex;gap:0.4rem;">
-                  <button type="button" id="btn-save-brandkit" class="btn btn-secondary btn-sm">Simpan Brand Kit</button>
-                  <select id="select-brandkit" class="select" style="padding-block:0.35rem;">
-                    <option value="">Muat Brand Kit...</option>
+                  <select id="des-frame-style" class="select">
+                    <option value="none">Polos</option>
+                    <option value="solid">Bingkai Tegas</option>
+                    <option value="rounded">Bingkai Halus</option>
+                    <option value="badge">Lencana Bawah</option>
                   </select>
+                  <select id="des-frame-font" class="select" aria-label="Font Bingkai">
+                    <option value="sans">Sans</option>
+                    <option value="display">Display</option>
+                    <option value="mono">Mono</option>
+                  </select>
+                  <input type="color" id="des-frame-color" class="color-input" value="#0067c0" aria-label="Warna Bingkai">
                 </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="select-brandkit">Brand Kit</label>
+              <div style="display:flex;gap:0.4rem;">
+                <button type="button" id="btn-save-brandkit" class="btn btn-secondary btn-sm">Simpan Brand Kit</button>
+                <select id="select-brandkit" class="select" style="padding-block:0.35rem;">
+                  <option value="">Muat Brand Kit...</option>
+                </select>
               </div>
             </div>
           </div>
@@ -299,7 +379,7 @@
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
             <strong>Pratinjau Langsung</strong>
-            <span id="readability-badge" class="badge badge-success">Skor 100/100</span>
+            <span id="readability-badge" class="badge badge-neutral">Belum ada data</span>
           </div>
 
           <div class="qr-preview-box">

@@ -56,7 +56,7 @@ const state = {
   editId: null,
   isDynamic: false,
   type: 'url',
-  fields: { url: 'https://your-qr-code-web.web.app/' },
+  fields: { url: '' },
   design: {
     dotType: 'rounded',
     dotColor: '#0f172a',
@@ -65,13 +65,19 @@ const state = {
     bgColor: '#ffffff',
     transparentBg: false,
     cornerSquareType: 'extra-rounded',
+    cornerSquareColor: '#0f172a',
     cornerDotType: 'dot',
+    cornerDotColor: '#0f172a',
     errorCorrection: 'M',
     image: '',
-    imageSize: 0.32,
+    imageSize: 0.20,
     imageMargin: 6,
     margin: 12,
     frameText: '',
+    frameStyle: 'none',
+    frameFont: 'sans',
+    frameColor: '#0067c0',
+    printSizeCm: 2.5,
     size: 260
   },
   activeShortUrl: '',
@@ -286,7 +292,7 @@ function renderContentFields() {
 function buildStaticPayload() {
   const f = state.fields;
   switch (state.type) {
-    case 'url': return sanitizeUrl(f.url) || 'https://yourqrcode.pages.dev';
+    case 'url': return sanitizeUrl(f.url) || 'https://your-qr-code-web.web.app/';
     case 'wa': {
       const num = String(f.waNum || '').replace(/\D/g, '');
       const msg = encodeURIComponent(f.waMsg || '');
@@ -306,8 +312,28 @@ function buildStaticPayload() {
       return `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:${f.evTitle || 'Acara'}\nLOCATION:${f.evLoc || ''}\nDTSTART:${fmt(f.evStart)}\nDTEND:${fmt(f.evEnd)}\nEND:VEVENT\nEND:VCALENDAR`;
     }
     case 'social': return `${f.socPlat || 'https://instagram.com/'}${f.socUser || ''}`;
-    case 'qris': return f.qrisRaw || 'https://yourqrcode.pages.dev';
+    case 'qris': return f.qrisRaw || 'https://your-qr-code-web.web.app/';
     default: return state.activeShortUrl || buildHostedPageUrl('pratinjau');
+  }
+}
+
+function hasQrContent() {
+  if (state.isDynamic && state.activeShortUrl) return true;
+  const f = state.fields;
+  switch (state.type) {
+    case 'url': return Boolean((f.url || '').trim());
+    case 'wa': return Boolean((f.waNum || '').trim());
+    case 'wifi': return Boolean((f.ssid || '').trim());
+    case 'vcard': return Boolean((f.vcName || f.vcPhone || f.vcEmail || '').trim());
+    case 'text': return Boolean((f.text || '').trim());
+    case 'email': return Boolean((f.emailTo || '').trim());
+    case 'tel': return Boolean((f.tel || '').trim());
+    case 'sms': return Boolean((f.smsNum || '').trim());
+    case 'geo': return Boolean((f.lat || f.lng || '').trim());
+    case 'ical': return Boolean((f.evTitle || '').trim());
+    case 'social': return Boolean((f.socUser || '').trim());
+    case 'qris': return Boolean((f.qrisRaw || '').trim());
+    default: return Boolean((f.pgTitle || f.pgItems || '').trim());
   }
 }
 
@@ -378,9 +404,17 @@ function syncDesignInputs() {
   document.getElementById('des-bg-color').value = d.bgColor;
   document.getElementById('des-bg-trans').checked = d.transparentBg;
   document.getElementById('des-eye-sq').value = d.cornerSquareType;
+  document.getElementById('des-eye-sq-color').value = d.cornerSquareColor || d.dotColor;
   document.getElementById('des-eye-dot').value = d.cornerDotType;
-  document.getElementById('des-ecc').value = d.errorCorrection;
+  document.getElementById('des-eye-dot-color').value = d.cornerDotColor || d.dotColor;
+  document.getElementById('des-ecc').value = d.image ? 'H' : d.errorCorrection;
+  document.getElementById('des-logo-size').value = Math.round((d.imageSize ?? 0.20) * 100);
+  document.getElementById('lbl-logo-size').textContent = Math.round((d.imageSize ?? 0.20) * 100);
+  document.getElementById('des-print-cm').value = d.printSizeCm ?? 2.5;
   document.getElementById('des-frame-text').value = d.frameText || '';
+  document.getElementById('des-frame-style').value = d.frameStyle || 'none';
+  document.getElementById('des-frame-font').value = d.frameFont || 'sans';
+  document.getElementById('des-frame-color').value = d.frameColor || '#0067c0';
 }
 
 function bindDesignEvents() {
@@ -392,6 +426,11 @@ function bindDesignEvents() {
       }
       if (id === 'des-logo-size') document.getElementById('lbl-logo-size').textContent = e.target.value;
       if (id === 'des-margin') document.getElementById('lbl-margin').textContent = e.target.value;
+      if (id === 'des-ecc' && state.design.image && state.design.errorCorrection !== 'H') {
+        state.design.errorCorrection = 'H';
+        e.target.value = 'H';
+        showToast('Error Correction otomatis dikunci ke Level H saat logo aktif.', 'warning');
+      }
       scheduleRender();
     });
   };
@@ -403,10 +442,16 @@ function bindDesignEvents() {
   bind('des-bg-color', 'bgColor');
   bind('des-bg-trans', 'transparentBg');
   bind('des-eye-sq', 'cornerSquareType');
+  bind('des-eye-sq-color', 'cornerSquareColor');
   bind('des-eye-dot', 'cornerDotType');
+  bind('des-eye-dot-color', 'cornerDotColor');
   bind('des-ecc', 'errorCorrection');
   bind('des-frame-text', 'frameText');
-  bind('des-logo-size', 'imageSize', (v) => Number(v) / 100);
+  bind('des-frame-style', 'frameStyle');
+  bind('des-frame-font', 'frameFont');
+  bind('des-frame-color', 'frameColor');
+  bind('des-print-cm', 'printSizeCm', (v) => Math.max(1, Number(v) || 2.5));
+  bind('des-logo-size', 'imageSize', (v) => Math.min(0.25, Number(v) / 100));
   bind('des-margin', 'margin', (v) => Number(v));
 
   document.getElementById('des-logo-preset').addEventListener('change', (e) => {
@@ -445,25 +490,58 @@ function renderQrPreview() {
   qrInstance = createQrInstance(data, state.design);
   qrInstance.append(mount);
 
+  const frameBox = document.getElementById('qr-frame-container');
   const ctaEl = document.getElementById('qr-frame-cta');
-  if (state.design.frameText) {
+  const fColor = state.design.frameColor || '#0067c0';
+  const fStyle = state.design.frameStyle || 'none';
+  const fFont = state.design.frameFont === 'display'
+    ? 'var(--font-display)'
+    : state.design.frameFont === 'mono'
+      ? 'var(--font-mono)'
+      : 'var(--font-sans)';
+
+  frameBox.style.border = fStyle === 'solid' ? `4px solid ${fColor}` : fStyle === 'rounded' ? `3px solid ${fColor}` : 'none';
+  frameBox.style.borderRadius = fStyle === 'solid' ? '4px' : 'var(--radius-md)';
+  frameBox.style.fontFamily = fFont;
+
+  if (state.design.frameText || fStyle === 'badge') {
     ctaEl.style.display = 'block';
-    ctaEl.style.color = state.design.dotColor;
-    ctaEl.textContent = state.design.frameText;
+    ctaEl.textContent = state.design.frameText || 'SCAN SAYA';
+    ctaEl.style.fontFamily = fFont;
+    if (fStyle === 'badge') {
+      ctaEl.style.background = fColor;
+      ctaEl.style.color = '#ffffff';
+      ctaEl.style.padding = '0.3rem 0.9rem';
+      ctaEl.style.borderRadius = '9999px';
+    } else {
+      ctaEl.style.background = 'transparent';
+      ctaEl.style.color = fColor;
+      ctaEl.style.padding = '0';
+    }
   } else {
     ctaEl.style.display = 'none';
   }
 
-  // Evaluasi skor keterbacaan
-  const report = evaluateReadability(state.design, data.length);
   const badge = document.getElementById('readability-badge');
+  const issuesEl = document.getElementById('readability-issues');
+  if (!hasQrContent()) {
+    badge.textContent = 'Belum ada data';
+    badge.className = 'badge badge-neutral';
+    document.getElementById('mobile-score-lbl').textContent = 'Belum ada data';
+    document.getElementById('lbl-contrast').textContent = '-';
+    document.getElementById('lbl-min-print').textContent = '-';
+    issuesEl.innerHTML = '<li style="color:var(--text-muted);">Isi konten QR terlebih dahulu untuk menghitung skor keterbacaan.</li>';
+    return;
+  }
+
+  // Evaluasi skor keterbacaan
+  const report = evaluateReadability(state.design, data.length, state.design.printSizeCm);
   badge.textContent = `Skor ${report.score}/100`;
   badge.className = `badge ${report.score >= 80 ? 'badge-success' : report.score >= 60 ? 'badge-warning' : 'badge-danger'}`;
   document.getElementById('mobile-score-lbl').textContent = `${report.score}/100`;
   document.getElementById('lbl-contrast').textContent = `${report.contrast}:1`;
   document.getElementById('lbl-min-print').textContent = `${report.minPrintCm} cm`;
 
-  const issuesEl = document.getElementById('readability-issues');
   issuesEl.innerHTML = report.issues.map((iss) => `
     <li>
       <span>${escapeHtml(iss.text)}</span>
@@ -476,12 +554,11 @@ function renderQrPreview() {
       const fix = btn.dataset.fix;
       if (fix === 'contrast') {
         state.design.dotColor = '#0f172a';
+        state.design.dotColor2 = '#0067c0';
         state.design.bgColor = '#ffffff';
         state.design.transparentBg = false;
       } else if (fix === 'logoSize') {
-        state.design.imageSize = 0.30;
-        document.getElementById('des-logo-size').value = 30;
-        document.getElementById('lbl-logo-size').textContent = '30';
+        state.design.imageSize = 0.20;
       } else if (fix === 'ecc') {
         state.design.errorCorrection = 'H';
       } else if (fix === 'margin') {
@@ -494,6 +571,38 @@ function renderQrPreview() {
     });
   });
 }
+
+function updateAbStatus() {
+  const statusEl = document.getElementById('ab-pct-status');
+  if (!statusEl) return;
+  const routes = [1, 2, 3].map((idx) => ({
+    url: document.getElementById(`rule-ab-url-${idx}`)?.value.trim() || '',
+    pct: Number(document.getElementById(`rule-ab-pct-${idx}`)?.value) || 0
+  })).filter((r) => r.url);
+
+  if (routes.length === 0) {
+    statusEl.textContent = 'Opsional';
+    statusEl.style.color = 'var(--text-muted)';
+    return;
+  }
+
+  const total = routes.reduce((sum, r) => sum + r.pct, 0);
+  if (routes.length < 2) {
+    statusEl.textContent = `Isi min. 2 URL (Total: ${total}%)`;
+    statusEl.style.color = 'var(--status-warning)';
+  } else if (total === 100) {
+    statusEl.textContent = `Total: 100% (Valid)`;
+    statusEl.style.color = 'var(--status-success)';
+  } else {
+    statusEl.textContent = `Total: ${total}% (Harus 100%)`;
+    statusEl.style.color = 'var(--status-danger)';
+  }
+}
+
+[1, 2, 3].forEach((idx) => {
+  document.getElementById(`rule-ab-url-${idx}`)?.addEventListener('input', updateAbStatus);
+  document.getElementById(`rule-ab-pct-${idx}`)?.addEventListener('input', updateAbStatus);
+});
 
 /* =========================================================================
  * SIMPAN QR DINAMIS, CEK SLUG, BRAND KIT, & UNDUH
@@ -525,10 +634,45 @@ document.getElementById('btn-save-qr').addEventListener('click', async () => {
     const aturan = {};
     const iosUrl = sanitizeUrl(document.getElementById('rule-ios').value);
     const androidUrl = sanitizeUrl(document.getElementById('rule-android').value);
-    const abUrl = sanitizeUrl(document.getElementById('rule-ab').value);
+    const langCode = document.getElementById('rule-lang').value.trim().toLowerCase();
+    const langUrl = sanitizeUrl(document.getElementById('rule-lang-url').value);
+    const daysRaw = document.getElementById('rule-days').value.trim();
+    const hourStart = document.getElementById('rule-hour-start').value;
+    const hourEnd = document.getElementById('rule-hour-end').value;
+    const timeUrl = sanitizeUrl(document.getElementById('rule-time-url').value);
+
     if (iosUrl) aturan.ios = iosUrl;
     if (androidUrl) aturan.android = androidUrl;
-    if (abUrl) aturan.ab = abUrl;
+    if (langCode && langUrl) {
+      aturan.lang = langCode;
+      aturan.langUrl = langUrl;
+    }
+    if (timeUrl && (daysRaw || (hourStart !== '' && hourEnd !== ''))) {
+      aturan.timeUrl = timeUrl;
+      if (daysRaw) {
+        aturan.days = daysRaw.split(',').map((d) => Number(d.trim())).filter((n) => !Number.isNaN(n) && n >= 0 && n <= 6);
+      }
+      if (hourStart !== '' && hourEnd !== '') {
+        aturan.hourStart = Number(hourStart);
+        aturan.hourEnd = Number(hourEnd);
+      }
+    }
+
+    const abRoutes = [1, 2, 3].map((idx) => ({
+      url: sanitizeUrl(document.getElementById(`rule-ab-url-${idx}`).value),
+      pct: Number(document.getElementById(`rule-ab-pct-${idx}`).value) || 0
+    })).filter((r) => r.url);
+
+    if (abRoutes.length > 0) {
+      if (abRoutes.length < 2) {
+        throw new Error('Rotasi A/B memerlukan minimal 2 URL dengan total persentase 100%.');
+      }
+      const totalPct = abRoutes.reduce((s, r) => s + r.pct, 0);
+      if (totalPct !== 100) {
+        throw new Error(`Total persentase Rotasi A/B harus 100% (saat ini ${totalPct}%).`);
+      }
+      aturan.abRoutes = abRoutes;
+    }
 
     const saved = await saveDynamicQr({
       id: state.editId,
@@ -729,9 +873,27 @@ async function initEditIfPresent() {
       if (qr.link.mulai) document.getElementById('dyn-start').value = qr.link.mulai;
       if (qr.link.berakhir) document.getElementById('dyn-end').value = qr.link.berakhir;
       if (qr.link.batasScan) document.getElementById('dyn-limit').value = qr.link.batasScan;
-      if (qr.link.aturan?.ios) document.getElementById('rule-ios').value = qr.link.aturan.ios;
-      if (qr.link.aturan?.android) document.getElementById('rule-android').value = qr.link.aturan.android;
-      if (qr.link.aturan?.ab) document.getElementById('rule-ab').value = qr.link.aturan.ab;
+      const a = qr.link.aturan || {};
+      if (a.ios) document.getElementById('rule-ios').value = a.ios;
+      if (a.android) document.getElementById('rule-android').value = a.android;
+      if (a.lang) document.getElementById('rule-lang').value = a.lang;
+      if (a.langUrl) document.getElementById('rule-lang-url').value = a.langUrl;
+      if (Array.isArray(a.days)) document.getElementById('rule-days').value = a.days.join(',');
+      if (a.hourStart !== undefined) document.getElementById('rule-hour-start').value = a.hourStart;
+      if (a.hourEnd !== undefined) document.getElementById('rule-hour-end').value = a.hourEnd;
+      if (a.timeUrl) document.getElementById('rule-time-url').value = a.timeUrl;
+      if (Array.isArray(a.abRoutes)) {
+        a.abRoutes.slice(0, 3).forEach((r, i) => {
+          document.getElementById(`rule-ab-url-${i + 1}`).value = r.url || '';
+          document.getElementById(`rule-ab-pct-${i + 1}`).value = r.pct ?? 0;
+        });
+      } else if (a.ab) {
+        document.getElementById('rule-ab-url-1').value = qr.link.tujuan || '';
+        document.getElementById('rule-ab-pct-1').value = 50;
+        document.getElementById('rule-ab-url-2').value = a.ab;
+        document.getElementById('rule-ab-pct-2').value = 50;
+      }
+      updateAbStatus();
     }
     if (state.activeShortUrl) {
       document.getElementById('saved-short-url-box').style.display = 'block';

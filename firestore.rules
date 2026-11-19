@@ -211,8 +211,9 @@ service cloud.firestore {
       return hasRequiredFields(['nama', 'tipe', 'ownerUid']) &&
         hasOnlyAllowedFields([
           'nama', 'tipe', 'ownerUid', 'wid', 'folderId', 'brandKitId',
-          'konten', 'data', 'gaya', 'style', 'kodeLink', 'slugHalaman',
-          'dibuat', 'diperbarui', 'catatan', 'favorit', 'tags'
+          'konten', 'kontenJson', 'data', 'gaya', 'desainJson', 'style',
+          'kode', 'kodeLink', 'slugHalaman', 'status',
+          'dibuat', 'diubah', 'diperbarui', 'catatan', 'favorit', 'tags'
         ]) &&
         validStringLength(data, 'nama', 1, 150) &&
         validStringLength(data, 'tipe', 1, 50) &&
@@ -220,15 +221,20 @@ service cloud.firestore {
         isValidOptionalString(data, 'wid', 0, 128) &&
         isValidOptionalString(data, 'folderId', 0, 128) &&
         isValidOptionalString(data, 'brandKitId', 0, 128) &&
+        isValidOptionalString(data, 'kode', 0, 40) &&
         isValidOptionalString(data, 'kodeLink', 0, 40) &&
         isValidOptionalString(data, 'slugHalaman', 0, 80) &&
+        (!('status' in data) || data.status in ['active', 'paused', 'expired']) &&
         isValidOptionalString(data, 'catatan', 0, 1000) &&
         (!('favorit' in data) || data.favorit is bool) &&
         (!('dibuat' in data) || data.dibuat is timestamp) &&
+        (!('diubah' in data) || data.diubah is timestamp) &&
         (!('diperbarui' in data) || data.diperbarui is timestamp) &&
         (!('konten' in data) || (data.konten is string && data.konten.size() <= 5000) || data.konten is map) &&
+        (!('kontenJson' in data) || (data.kontenJson is map && data.kontenJson.size() <= 50)) &&
         (!('data' in data) || (data.data is map && data.data.size() <= 50)) &&
         (!('gaya' in data) || (data.gaya is map && data.gaya.size() <= 50)) &&
+        (!('desainJson' in data) || (data.desainJson is map && data.desainJson.size() <= 50)) &&
         (!('style' in data) || (data.style is map && data.style.size() <= 50)) &&
         (!('tags' in data) || (data.tags is list && data.tags.size() <= 20));
     }
@@ -272,7 +278,9 @@ service cloud.firestore {
         hasRequiredFields(['tujuan', 'status', 'ownerUid']) &&
         hasOnlyAllowedFields([
           'kode', 'tujuan', 'status', 'ownerUid', 'wid', 'judul',
-          'qrId', 'kadaluarsa', 'maksKlik', 'dibuat', 'diperbarui'
+          'qrId', 'kadaluarsa', 'maksKlik', 'mulai', 'berakhir',
+          'batasScan', 'aturan', 'pesanDijeda', 'passwordHash',
+          'dibuat', 'diperbarui'
         ]) &&
         (!('kode' in data) || (data.kode is string && data.kode == kode)) &&
         isSafeTargetUrl(data.tujuan) &&
@@ -283,6 +291,12 @@ service cloud.firestore {
         isValidOptionalString(data, 'qrId', 0, 128) &&
         (!('kadaluarsa' in data) || data.kadaluarsa is timestamp) &&
         (!('maksKlik' in data) || (data.maksKlik is int && data.maksKlik >= 0)) &&
+        (!('mulai' in data) || data.mulai == null || (data.mulai is string && data.mulai.size() <= 40)) &&
+        (!('berakhir' in data) || data.berakhir == null || (data.berakhir is string && data.berakhir.size() <= 40)) &&
+        (!('batasScan' in data) || (data.batasScan is int && data.batasScan >= 0)) &&
+        (!('aturan' in data) || (data.aturan is map && data.aturan.size() <= 20)) &&
+        isValidOptionalString(data, 'pesanDijeda', 0, 500) &&
+        isValidOptionalString(data, 'passwordHash', 0, 128) &&
         (!('dibuat' in data) || data.dibuat is timestamp) &&
         (!('diperbarui' in data) || data.diperbarui is timestamp);
     }

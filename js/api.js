@@ -523,6 +523,43 @@ export async function getLinkStats(kode) {
   return snap.docs.map((d) => d.data());
 }
 
+const GLOBAL_STATS_CACHE_KEY = 'yourqr_stats_total_cache';
+const GLOBAL_STATS_TTL_MS = 10 * 60 * 1000;
+
+export async function getGlobalTotalScans() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(GLOBAL_STATS_CACHE_KEY) || 'null');
+    if (cached && typeof cached.total === 'number' && (Date.now() - cached.ts) < GLOBAL_STATS_TTL_MS) {
+      return cached.total;
+    }
+  } catch {
+    // Abaikan cache rusak
+  }
+
+  let total = 0;
+  try {
+    const ctx = await ensureFirebase();
+    if (!ctx) {
+      total = Object.values(readLocal('stats')).reduce((s, r) => s + (Number(r.total) || 0), 0);
+    } else {
+      const { collection, query, limit, getDocs } = ctx.fsMod;
+      const snap = await getDocs(query(collection(ctx.db, 'stats'), limit(500)));
+      snap.forEach((d) => {
+        total += Number(d.data()?.total) || 0;
+      });
+    }
+  } catch {
+    total = 0;
+  }
+
+  try {
+    localStorage.setItem(GLOBAL_STATS_CACHE_KEY, JSON.stringify({ total, ts: Date.now() }));
+  } catch {
+    // Abaikan jika storage diblokir
+  }
+  return total;
+}
+
 /* =========================================================================
  * HALAMAN HOSTING (pages/{slug})
  * ========================================================================= */

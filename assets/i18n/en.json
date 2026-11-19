@@ -22,5 +22,18 @@
   "gen.step2": "2. Design",
   "gen.step3": "3. Download",
   "gen.staticMode": "Static QR (Offline, no server)",
-  "gen.dynamicMode": "Dynamic QR (Editable & trackable)"
+  "gen.dynamicMode": "Dynamic QR (Editable & trackable)",
+  "hero.statScans": "Total Scans Recorded",
+  "hero.statTypes": "Content Types & Modules",
+  "hero.statPrice": "No Paywall",
+  "who.title": "Who Is Your QR Code For?",
+  "who.subtitle": "Purpose-built for schools, student organizations, educators, and small businesses.",
+  "who.pelajar": "Students & Learners",
+  "who.ormawa": "Student Orgs & Communities",
+  "who.sekolah": "Schools & Institutions",
+  "who.umkm": "SMEs & Culinary",
+  "footer.privacy": "Privacy",
+  "footer.terms": "Terms",
+  "footer.help": "Help",
+  "footer.bug": "Report Bug"
 }

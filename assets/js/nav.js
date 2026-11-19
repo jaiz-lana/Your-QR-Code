@@ -342,9 +342,12 @@ export function initShell({ active = 'home', basePrefix = '.' } = {}) {
           </a>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;">
-          ${APP_CONFIG.supportUrl ? `<a href="${escapeHtml(APP_CONFIG.supportUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Dukung Pengembang (Saweria)</a>` : ''}
-          <a href="${basePrefix}/tentang.html">Tentang & Privasi</a>
-          <a href="${APP_CONFIG.bugReportUrl}" target="_blank" rel="noopener noreferrer">Laporkan Bug</a>
+          ${APP_CONFIG.supportUrl ? `<a href="${escapeHtml(APP_CONFIG.supportUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Dukung Pengembang</a>` : ''}
+          <a href="https://github.com/jaiz-lana/Your-QR-Code" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a href="${basePrefix}/tentang.html#privasi" data-i18n="footer.privacy">Privasi</a>
+          <a href="${basePrefix}/tentang.html#syarat" data-i18n="footer.terms">Syarat</a>
+          <a href="${basePrefix}/tentang.html#bantuan" data-i18n="footer.help">Bantuan</a>
+          <a href="${APP_CONFIG.bugReportUrl}" target="_blank" rel="noopener noreferrer" data-i18n="footer.bug">Lapor Bug</a>
         </div>
       </div>
     `;
