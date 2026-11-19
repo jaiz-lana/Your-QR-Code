@@ -244,6 +244,7 @@ export function initShell({ active = 'home', basePrefix = '.' } = {}) {
         <nav class="nav-links" aria-label="Navigasi utama">
           <a href="${basePrefix}/index.html" class="nav-link ${active === 'home' ? 'active' : ''}">${icon('home', 16)} <span data-i18n="nav.home">Beranda</span></a>
           <a href="${basePrefix}/generator.html" class="nav-link ${active === 'generator' ? 'active' : ''}">${icon('plusSquare', 16)} <span data-i18n="nav.generator">Buat QR</span></a>
+          <a href="${basePrefix}/tentang.html" class="nav-link ${active === 'about' ? 'active' : ''}">Tentang</a>
           ${loggedIn ? `
             <a href="${basePrefix}/dashboard.html" class="nav-link ${active === 'dashboard' ? 'active' : ''}">${icon('layoutGrid', 16)} <span data-i18n="nav.dashboard">QR Saya</span></a>
             <a href="${basePrefix}/modul/index.html" class="nav-link ${active === 'modul' ? 'active' : ''}">${icon('layers', 16)} <span data-i18n="nav.modules">Modul</span></a>
