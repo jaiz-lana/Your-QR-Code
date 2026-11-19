@@ -90,7 +90,7 @@ export const APP_CONFIG = {
   developerName: 'jaiz-lana (GitHub)',
   developerGithub: 'https://github.com/jaiz-lana',
   supportUrl: 'https://saweria.co/jaizlana',
-  bugReportUrl: 'https://github.com/jaiz-lana/your-qr-code/issues/new'
+  bugReportUrl: 'https://github.com/jaiz-lana/Your-QR-Code/issues/new'
 };
 
 /**
