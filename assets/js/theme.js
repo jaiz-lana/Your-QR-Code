@@ -17,11 +17,17 @@ function getStoredScheme() {
   }
 }
 
+export function getEffectiveScheme() {
+  return getStoredScheme() ?? getSystemScheme();
+}
+
 export function applyColorScheme(scheme) {
+  const value = scheme ?? 'light dark';
   const meta = document.querySelector('meta[name="color-scheme"]');
   if (meta) {
-    meta.content = scheme ?? 'light dark';
+    meta.content = value;
   }
+  document.documentElement.style.colorScheme = value;
 }
 
 export function toggleColorScheme() {

@@ -1,5 +1,5 @@
 /* Service Worker PWA untuk mode offline (terutama Generator QR Statis) */
-const CACHE_NAME = 'your-qr-code-v1';
+const CACHE_NAME = 'your-qr-code-v2';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -7,13 +7,17 @@ const CORE_ASSETS = [
   './dashboard.html',
   './scan.html',
   './tentang.html',
+  './p.html',
   './assets/css/tokens.css',
   './assets/css/app.css',
   './assets/js/theme.js',
   './assets/js/i18n.js',
+  './assets/js/icons.js',
   './assets/js/utils.js',
   './assets/js/nav.js',
   './assets/js/qr-engine.js',
+  './assets/js/generator.js',
+  './assets/js/dashboard.js',
   './assets/i18n/id.json',
   './assets/i18n/en.json',
   './js/config.js',

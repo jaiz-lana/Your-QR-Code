@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mengalihkan... — Your QR Code</title>
   <meta name="robots" content="noindex,nofollow">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
   <link rel="stylesheet" href="./assets/css/tokens.css">
   <link rel="stylesheet" href="./assets/css/app.css">
 </head>
@@ -120,6 +120,10 @@
       }
       if (link.berakhir && new Date(link.berakhir).getTime() < now) {
         showPaused(link.pesanDijeda || 'Masa berlaku QR Code ini telah berakhir.');
+        return;
+      }
+      if (link.batasScan > 0 && (link.totalScan || 0) >= link.batasScan) {
+        showPaused(link.pesanDijeda || 'Batas jumlah scan untuk QR Code ini telah tercapai.');
         return;
       }
 

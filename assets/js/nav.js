@@ -15,6 +15,7 @@ import {
 } from '../../js/api.js';
 import { getLang, loadTranslations } from './i18n.js';
 import { icon } from './icons.js';
+import { getEffectiveScheme, initThemeSync, toggleColorScheme } from './theme.js';
 import { enableDialogLightDismiss, escapeHtml, showToast } from './utils.js';
 
 let authDialogEl = null;
@@ -28,7 +29,9 @@ export function openAuthModal(defaultTab = 'login') {
 function switchAuthTab(tab) {
   if (!authDialogEl) return;
   authDialogEl.querySelectorAll('.auth-tab-btn').forEach((b) => {
-    b.classList.toggle('active', b.dataset.authTab === tab);
+    const active = b.dataset.authTab === tab;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-selected', active ? 'true' : 'false');
   });
   authDialogEl.querySelectorAll('[data-auth-panel]').forEach((p) => {
     p.hidden = p.dataset.authPanel !== tab;
@@ -86,9 +89,9 @@ function ensureAuthModal() {
     </div>
 
     <div class="auth-tabs" role="tablist">
-      <button type="button" class="auth-tab-btn active" data-auth-tab="login">Masuk</button>
-      <button type="button" class="auth-tab-btn" data-auth-tab="register">Daftar Baru</button>
-      <button type="button" class="auth-tab-btn" data-auth-tab="magic">Magic Link</button>
+      <button type="button" role="tab" aria-selected="true" class="auth-tab-btn active" data-auth-tab="login">Masuk</button>
+      <button type="button" role="tab" aria-selected="false" class="auth-tab-btn" data-auth-tab="register">Daftar Baru</button>
+      <button type="button" role="tab" aria-selected="false" class="auth-tab-btn" data-auth-tab="magic">Magic Link</button>
     </div>
 
     <form id="global-form-login" class="form-grid" data-auth-panel="login">
@@ -205,14 +208,19 @@ function ensureAuthModal() {
 }
 
 export function initShell({ active = 'home', basePrefix = '.' } = {}) {
+  initThemeSync();
   enableDialogLightDismiss();
   completeMagicLinkIfPresent().catch(() => {});
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register(`${basePrefix}/sw.js`).catch(() => {});
+  }
 
   const header = document.getElementById('app-navbar');
   const renderNavbar = (user) => {
     if (!header) return;
     header.className = 'navbar no-print';
     const loggedIn = Boolean(user);
+    const isDark = getEffectiveScheme() === 'dark';
 
     header.innerHTML = `
       <div class="container navbar-inner">
@@ -253,6 +261,9 @@ export function initShell({ active = 'home', basePrefix = '.' } = {}) {
         </nav>
 
         <div class="nav-actions">
+          <button type="button" id="theme-toggle-btn" class="icon-btn" title="Ganti Tema Terang/Gelap" aria-label="Ganti Tema Terang atau Gelap">
+            ${icon(isDark ? 'sun' : 'moon', 17)}
+          </button>
           <button type="button" id="lang-toggle-btn" class="btn btn-ghost btn-sm" title="Ganti Bahasa / Switch Language">
             ${getLang().toUpperCase()}
           </button>
@@ -263,10 +274,16 @@ export function initShell({ active = 'home', basePrefix = '.' } = {}) {
             <button type="button" id="nav-login-btn" class="btn btn-secondary btn-sm">${icon('logIn', 15)} Masuk / Daftar</button>
             <a href="${basePrefix}/generator.html" class="btn btn-primary btn-sm" data-i18n="nav.generator">Buat QR</a>
           `}
-          <button type="button" id="mobile-nav-btn" class="icon-btn mobile-menu-btn" aria-label="Buka menu" aria-expanded="false">${icon('menu', 18)}</button>
+          <button type="button" id="mobile-nav-btn" popovertarget="mobile-nav-drawer" class="icon-btn mobile-menu-btn" aria-label="Buka menu" aria-expanded="false">${icon('menu', 18)}</button>
         </div>
       </div>
     `;
+
+    document.getElementById('theme-toggle-btn')?.addEventListener('click', (e) => {
+      toggleColorScheme();
+      const darkNow = getEffectiveScheme() === 'dark';
+      e.currentTarget.innerHTML = icon(darkNow ? 'sun' : 'moon', 17);
+    });
 
     document.getElementById('lang-toggle-btn')?.addEventListener('click', async (e) => {
       const next = getLang() === 'id' ? 'en' : 'id';
@@ -280,37 +297,33 @@ export function initShell({ active = 'home', basePrefix = '.' } = {}) {
       showToast('Anda telah keluar.', 'success');
     });
 
+    let drawer = document.getElementById('mobile-nav-drawer');
+    if (drawer) drawer.remove();
+    drawer = document.createElement('nav');
+    drawer.id = 'mobile-nav-drawer';
+    drawer.setAttribute('popover', 'auto');
+    drawer.setAttribute('aria-label', 'Menu seluler');
+    drawer.className = 'card';
+    drawer.style.cssText = 'position:fixed;inset:70px 1rem auto 1rem;margin:0;width:auto;max-width:calc(100vw - 2rem);z-index:50;';
+    drawer.innerHTML = `
+      <a href="${basePrefix}/index.html" class="nav-link ${active === 'home' ? 'active' : ''}">${icon('home', 16)} Beranda</a>
+      <a href="${basePrefix}/generator.html" class="nav-link ${active === 'generator' ? 'active' : ''}">${icon('plusSquare', 16)} Buat QR</a>
+      <a href="${basePrefix}/tentang.html" class="nav-link ${active === 'about' ? 'active' : ''}">Tentang</a>
+      ${loggedIn ? `
+        <a href="${basePrefix}/dashboard.html" class="nav-link ${active === 'dashboard' ? 'active' : ''}">${icon('layoutGrid', 16)} QR Saya</a>
+        <a href="${basePrefix}/modul/index.html" class="nav-link ${active === 'modul' ? 'active' : ''}">${icon('layers', 16)} Modul Khusus</a>
+        ${APP_CONFIG.modules.toolkit ? `<a href="${basePrefix}/scan.html" class="nav-link ${active === 'scan' ? 'active' : ''}">${icon('scanLine', 16)} Scanner & Alat</a>` : ''}
+      ` : `<button type="button" id="drawer-login-btn" class="btn btn-primary btn-sm">${icon('logIn', 15)} Masuk / Daftar</button>`}
+    `;
+    document.body.appendChild(drawer);
+    drawer.querySelector('#drawer-login-btn')?.addEventListener('click', () => {
+      drawer.hidePopover?.();
+      openAuthModal('login');
+    });
     const mobileBtn = document.getElementById('mobile-nav-btn');
-    if (mobileBtn) {
-      mobileBtn.addEventListener('click', () => {
-        let drawer = document.getElementById('mobile-nav-drawer');
-        if (!drawer) {
-          drawer = document.createElement('div');
-          drawer.id = 'mobile-nav-drawer';
-          drawer.className = 'card';
-          drawer.style.cssText = 'position:fixed;top:70px;right:1rem;left:1rem;z-index:50;display:grid;gap:0.4rem;';
-          drawer.innerHTML = `
-            <a href="${basePrefix}/index.html" class="nav-link">${icon('home', 16)} Beranda</a>
-            <a href="${basePrefix}/generator.html" class="nav-link">${icon('plusSquare', 16)} Buat QR</a>
-            ${loggedIn ? `
-              <a href="${basePrefix}/dashboard.html" class="nav-link">${icon('layoutGrid', 16)} QR Saya</a>
-              <a href="${basePrefix}/modul/index.html" class="nav-link">${icon('layers', 16)} Modul Khusus</a>
-              <a href="${basePrefix}/scan.html" class="nav-link">${icon('scanLine', 16)} Scanner & Alat</a>
-            ` : `<button type="button" id="drawer-login-btn" class="btn btn-primary btn-sm">${icon('logIn', 15)} Masuk / Daftar</button>`}
-          `;
-          document.body.appendChild(drawer);
-          drawer.querySelector('#drawer-login-btn')?.addEventListener('click', () => {
-            drawer.style.display = 'none';
-            openAuthModal('login');
-          });
-          mobileBtn.setAttribute('aria-expanded', 'true');
-        } else {
-          const hidden = drawer.style.display === 'none';
-          drawer.style.display = hidden ? 'grid' : 'none';
-          mobileBtn.setAttribute('aria-expanded', hidden ? 'true' : 'false');
-        }
-      });
-    }
+    drawer.addEventListener('toggle', (e) => {
+      mobileBtn?.setAttribute('aria-expanded', e.newState === 'open' ? 'true' : 'false');
+    });
     loadTranslations(getLang(), basePrefix);
   };
 

@@ -51,8 +51,12 @@ onAuthChanged(async (user) => {
  * ========================================================================= */
 document.querySelectorAll('[data-dash-tab]').forEach((btn) => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('[data-dash-tab]').forEach((b) => b.classList.remove('active'));
+    document.querySelectorAll('[data-dash-tab]').forEach((b) => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
+    });
     btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
     const tab = btn.dataset.dashTab;
     ['list', 'folders', 'workspace', 'backup'].forEach((name) => {
       document.getElementById(`tab-${name}`).hidden = name !== tab;
@@ -67,6 +71,19 @@ async function refreshData() {
   allQrs = await listQrs();
   allFolders = await listUserCollection('folders');
   const workspaces = await listUserCollection('workspaces');
+
+  if (isFirebaseConfigured() && allQrs.length) {
+    await Promise.all(allQrs.map(async (qr) => {
+      if (typeof qr.totalScan !== 'number' && qr.kode) {
+        try {
+          const rows = await getLinkStats(qr.kode);
+          qr.totalScan = rows.reduce((s, r) => s + (r.total || 0), 0);
+        } catch {
+          qr.totalScan = 0;
+        }
+      }
+    }));
+  }
 
   document.getElementById('sum-total-qr').textContent = allQrs.length;
   document.getElementById('sum-total-scan').textContent = allQrs.reduce((s, q) => s + (q.totalScan || 0), 0);
@@ -124,6 +141,7 @@ function renderQrTable() {
         <td>${formatDate(item.diubah)}</td>
         <td>
           <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+            <a href="./generator.html?edit=${encodeURIComponent(item.id)}" class="btn btn-secondary btn-sm">Edit</a>
             <button type="button" class="btn btn-secondary btn-sm" data-act="stats" data-kode="${escapeHtml(item.kode)}" data-nama="${escapeHtml(item.nama)}">Analitik</button>
             <button type="button" class="btn btn-secondary btn-sm" data-act="toggle" data-id="${escapeHtml(item.id)}" data-kode="${escapeHtml(item.kode)}" data-status="${status}">
               ${status === 'active' ? 'Jeda' : 'Aktifkan'}

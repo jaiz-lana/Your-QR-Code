@@ -76,7 +76,7 @@ a:hover {
   top: 0;
   z-index: 40;
   height: var(--header-height);
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--bg-navbar);
   backdrop-filter: blur(18px) saturate(160%);
   border-bottom: 1px solid var(--border-color);
 }
@@ -162,6 +162,10 @@ a:hover {
     display: none;
   }
 }
+#mobile-nav-drawer:popover-open {
+  display: grid;
+  gap: 0.4rem;
+}
 
 /* =========================================================================
  * TOMBOL & ANIMASI HOVER KURSOR (Berlaku di semua tombol)
@@ -242,7 +246,7 @@ button.icon-btn,
 }
 
 .btn-secondary {
-  background: #ffffff;
+  background: var(--bg-surface);
   color: var(--text-primary);
   border-color: var(--border-strong);
 }
@@ -293,7 +297,7 @@ button.icon-btn,
 
 /* Kartu & Panel */
 .card {
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: 1.25rem;
@@ -386,7 +390,7 @@ button.icon-btn,
   padding: 0.62rem 0.8rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
-  background: #ffffff;
+  background: var(--bg-surface);
   color: var(--text-primary);
   transition: border-color 0.16s, box-shadow 0.16s;
 }
@@ -408,7 +412,7 @@ input[type="color"].color-input {
   padding: 2px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
-  background: #ffffff;
+  background: var(--bg-surface);
   cursor: pointer;
 }
 
@@ -662,7 +666,7 @@ dialog.app-dialog {
   max-height: calc(100dvh - 2rem);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-xl);
-  background: linear-gradient(180deg, #ffffff 0%, #f6faff 100%);
+  background: var(--bg-dialog);
   color: var(--text-primary);
   padding: 1.5rem;
   box-shadow: var(--shadow-lg);
@@ -714,7 +718,7 @@ dialog.app-dialog.dialog-lg {
   color: var(--brand-primary);
 }
 .auth-tab-btn.active {
-  background: #ffffff;
+  background: var(--bg-surface);
   color: var(--brand-primary);
   box-shadow: var(--shadow-sm);
 }
@@ -748,7 +752,7 @@ dialog.app-dialog.dialog-lg {
 .toast {
   padding: 0.75rem 1rem;
   border-radius: var(--radius-md);
-  background: #ffffff;
+  background: var(--bg-surface);
   border: 1px solid var(--border-strong);
   box-shadow: var(--shadow-md);
   font-size: 0.875rem;
@@ -764,7 +768,7 @@ dialog.app-dialog.dialog-lg {
 /* Footer */
 .footer {
   border-top: 1px solid var(--border-color);
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--bg-navbar);
   padding-block: 2rem;
   margin-top: 3rem;
   font-size: 0.875rem;

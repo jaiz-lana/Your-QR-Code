@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QR Saya & Analitik — Your QR Code</title>
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
   <link rel="icon" type="image/svg+xml" href="./assets/img/icon.svg">
   <link rel="stylesheet" href="./assets/css/tokens.css">
   <link rel="stylesheet" href="./assets/css/app.css">
@@ -53,11 +53,11 @@
         </div>
       </div>
 
-      <div class="tabs">
-        <button type="button" class="tab-btn active" data-dash-tab="list">Daftar QR</button>
-        <button type="button" class="tab-btn" data-dash-tab="folders">Folder & Proyek</button>
-        <button type="button" class="tab-btn" data-dash-tab="workspace">Workspace & Peran</button>
-        <button type="button" class="tab-btn" data-dash-tab="backup">Backup Data</button>
+      <div class="tabs" role="tablist" aria-label="Menu Dashboard">
+        <button type="button" role="tab" aria-selected="true" class="tab-btn active" data-dash-tab="list">Daftar QR</button>
+        <button type="button" role="tab" aria-selected="false" class="tab-btn" data-dash-tab="folders">Folder & Proyek</button>
+        <button type="button" role="tab" aria-selected="false" class="tab-btn" data-dash-tab="workspace">Workspace & Peran</button>
+        <button type="button" role="tab" aria-selected="false" class="tab-btn" data-dash-tab="backup">Backup Data</button>
       </div>
 
       <!-- TAB DAFTAR QR -->

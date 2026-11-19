@@ -6,6 +6,7 @@ import { icon } from './icons.js';
 import { buildHostedPageUrl, buildShortUrl } from '../../js/config.js';
 import {
   checkSlugAvailable,
+  getQrById,
   listUserCollection,
   saveDynamicQr,
   saveHostedPage,
@@ -52,9 +53,10 @@ const CONTENT_TYPES = [
 ];
 
 const state = {
+  editId: null,
   isDynamic: false,
   type: 'url',
-  fields: { url: 'https://yourqrcode.pages.dev' },
+  fields: { url: 'https://your-qr-code-web.web.app/' },
   design: {
     dotType: 'rounded',
     dotColor: '#0f172a',
@@ -529,6 +531,7 @@ document.getElementById('btn-save-qr').addEventListener('click', async () => {
     if (abUrl) aturan.ab = abUrl;
 
     const saved = await saveDynamicQr({
+      id: state.editId,
       nama,
       tipe: state.type,
       kontenJson: state.fields,
@@ -541,6 +544,7 @@ document.getElementById('btn-save-qr').addEventListener('click', async () => {
       password: document.getElementById('dyn-password').value,
       aturan
     });
+    state.editId = saved.qrId;
 
     state.isDynamic = true;
     state.activeShortUrl = buildShortUrl(saved.kode);
@@ -700,6 +704,52 @@ document.getElementById('btn-mobile-scroll-preview').addEventListener('click', (
   document.querySelector('.preview-sticky')?.scrollIntoView({ behavior: 'smooth' });
 });
 
+async function initEditIfPresent() {
+  const editId = new URLSearchParams(window.location.search).get('edit');
+  if (!editId) return;
+  try {
+    const qr = await getQrById(editId);
+    if (!qr) return;
+    state.editId = qr.id;
+    state.isDynamic = true;
+    state.type = qr.tipe || 'url';
+    state.fields = { ...(qr.kontenJson || {}) };
+    state.design = { ...state.design, ...(qr.desainJson || {}) };
+    state.activeShortUrl = qr.kode ? buildShortUrl(qr.kode) : '';
+
+    toggleDynamicEl.checked = true;
+    syncDynamicUi();
+    document.getElementById('qr-name').value = qr.nama || '';
+    const slugInput = document.getElementById('dyn-slug');
+    if (slugInput && qr.kode) {
+      slugInput.value = qr.kode;
+      slugInput.readOnly = true;
+    }
+    if (qr.link) {
+      if (qr.link.mulai) document.getElementById('dyn-start').value = qr.link.mulai;
+      if (qr.link.berakhir) document.getElementById('dyn-end').value = qr.link.berakhir;
+      if (qr.link.batasScan) document.getElementById('dyn-limit').value = qr.link.batasScan;
+      if (qr.link.aturan?.ios) document.getElementById('rule-ios').value = qr.link.aturan.ios;
+      if (qr.link.aturan?.android) document.getElementById('rule-android').value = qr.link.aturan.android;
+      if (qr.link.aturan?.ab) document.getElementById('rule-ab').value = qr.link.aturan.ab;
+    }
+    if (state.activeShortUrl) {
+      document.getElementById('saved-short-url-box').style.display = 'block';
+      const linkEl = document.getElementById('saved-short-url');
+      linkEl.href = state.activeShortUrl;
+      linkEl.textContent = state.activeShortUrl;
+    }
+
+    renderTypeGrid();
+    renderContentFields();
+    syncDesignInputs();
+    renderQrPreview();
+    showToast(`Mengedit QR: ${qr.nama || qr.kode}`, 'success');
+  } catch (err) {
+    showToast(err.message || 'Gagal memuat data QR untuk diedit.', 'warning');
+  }
+}
+
 /* Inisialisasi */
 renderTypeGrid();
 renderContentFields();
@@ -708,3 +758,4 @@ bindDesignEvents();
 syncDesignInputs();
 renderQrPreview();
 loadBrandKits();
+initEditIfPresent();

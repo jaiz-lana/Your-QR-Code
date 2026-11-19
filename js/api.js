@@ -380,6 +380,24 @@ export async function listQrs({ limitCount = 50 } = {}) {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
+export async function getQrById(qrId) {
+  if (!qrId) return null;
+  const ctx = await ensureFirebase();
+  if (!ctx) {
+    const qrs = readLocal('qrcodes');
+    const links = readLocal('links');
+    const qr = qrs[qrId];
+    if (!qr) return null;
+    return { ...qr, link: links[qr.kode] || null };
+  }
+  const { doc, getDoc } = ctx.fsMod;
+  const qrSnap = await getDoc(doc(ctx.db, 'qrcodes', qrId));
+  if (!qrSnap.exists()) return null;
+  const qr = { id: qrSnap.id, ...qrSnap.data() };
+  const linkSnap = qr.kode ? await getDoc(doc(ctx.db, 'links', qr.kode)) : null;
+  return { ...qr, link: linkSnap?.exists() ? linkSnap.data() : null };
+}
+
 export async function updateQrStatus(qrId, kode, newStatus) {
   const ctx = await ensureFirebase();
   if (!ctx) {
@@ -440,6 +458,7 @@ export async function recordScan(kode, meta) {
     const scans = readLocal('scans');
     const stats = readLocal('stats');
     const qrs = readLocal('qrcodes');
+    const links = readLocal('links');
     const scanId = `sc_${Date.now()}`;
     scans[scanId] = { kode, waktu: new Date().toISOString(), ...meta, hashUnik };
     const st = stats[statId] || { kode, tanggal: today, total: 0, unik: 0, perangkat: {}, os: {} };
@@ -447,11 +466,15 @@ export async function recordScan(kode, meta) {
     st.perangkat[meta.perangkat] = (st.perangkat[meta.perangkat] || 0) + 1;
     st.os[meta.os] = (st.os[meta.os] || 0) + 1;
     stats[statId] = st;
+    if (links[kode]) {
+      links[kode].totalScan = (links[kode].totalScan || 0) + 1;
+    }
     Object.values(qrs).forEach((qr) => {
       if (qr.kode === kode) qr.totalScan = (qr.totalScan || 0) + 1;
     });
     writeLocal('scans', scans);
     writeLocal('stats', stats);
+    writeLocal('links', links);
     writeLocal('qrcodes', qrs);
     return;
   }

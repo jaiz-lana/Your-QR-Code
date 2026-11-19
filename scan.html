@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scanner QR & Toolkit — Your QR Code</title>
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
   <link rel="icon" type="image/svg+xml" href="./assets/img/icon.svg">
   <link rel="stylesheet" href="./assets/css/tokens.css">
   <link rel="stylesheet" href="./assets/css/app.css">
@@ -16,10 +16,10 @@
     <h1 style="margin:0 0 0.35rem;font-family:var(--font-display);">Scanner QR & Toolkit</h1>
     <p style="margin:0 0 1.25rem;color:var(--text-secondary);">Pindai QR langsung dari kamera atau gambar (tampilkan tujuan dulu demi keamanan), bangun tautan UTM, atau buat widget embed.</p>
 
-    <div class="tabs">
-      <button type="button" class="tab-btn active" data-tk-tab="scanner">📷 Scanner QR</button>
-      <button type="button" class="tab-btn" data-tk-tab="utm">🔗 UTM Builder</button>
-      <button type="button" class="tab-btn" data-tk-tab="embed">🧩 Widget Embed</button>
+    <div class="tabs" role="tablist" aria-label="Alat Scanner dan Tautan">
+      <button type="button" role="tab" aria-selected="true" class="tab-btn active" data-tk-tab="scanner">📷 Scanner QR</button>
+      <button type="button" role="tab" aria-selected="false" class="tab-btn" data-tk-tab="utm">🔗 UTM Builder</button>
+      <button type="button" role="tab" aria-selected="false" class="tab-btn" data-tk-tab="embed">🧩 Widget Embed</button>
     </div>
 
     <!-- TAB SCANNER -->
@@ -53,13 +53,13 @@
     <section id="tk-utm" class="card" hidden>
       <h2 style="margin-top:0;">Pembuat Tautan Kampanye (UTM Builder)</h2>
       <div class="form-row form-row-2">
-        <div class="field"><label>URL Tujuan</label><input id="utm-url" class="input" placeholder="https://sekolah.sch.id/ppdb"></div>
-        <div class="field"><label>Source (Sumber)</label><input id="utm-src" class="input" placeholder="brosur_qr"></div>
-        <div class="field"><label>Medium</label><input id="utm-med" class="input" placeholder="cetak_a4"></div>
-        <div class="field"><label>Campaign</label><input id="utm-camp" class="input" placeholder="ppdb_2026"></div>
+        <div class="field"><label for="utm-url">URL Tujuan</label><input id="utm-url" class="input" placeholder="https://sekolah.sch.id/ppdb"></div>
+        <div class="field"><label for="utm-src">Source (Sumber)</label><input id="utm-src" class="input" placeholder="brosur_qr"></div>
+        <div class="field"><label for="utm-med">Medium</label><input id="utm-med" class="input" placeholder="cetak_a4"></div>
+        <div class="field"><label for="utm-camp">Campaign</label><input id="utm-camp" class="input" placeholder="ppdb_2026"></div>
       </div>
       <div class="field" style="margin-top:1rem;">
-        <label>Hasil URL dengan UTM</label>
+        <label for="utm-result">Hasil URL dengan UTM</label>
         <input id="utm-result" class="input" readonly>
       </div>
     </section>
@@ -69,10 +69,10 @@
       <h2 style="margin-top:0;">Widget Embed untuk Situs Sekolah / Ormawa</h2>
       <div class="field" style="margin-bottom:0.75rem;">
         <label for="embed-url">Tautan Halaman QR / Generator</label>
-        <input id="embed-url" class="input" value="https://yourqrcode.pages.dev/generator.html">
+        <input id="embed-url" class="input" value="https://your-qr-code-web.web.app/generator.html">
       </div>
       <div class="field">
-        <label>Salin Kode HTML Iframe</label>
+        <label for="embed-code">Salin Kode HTML Iframe</label>
         <textarea id="embed-code" class="textarea" readonly></textarea>
       </div>
     </section>
@@ -80,7 +80,7 @@
 
   <footer id="app-footer"></footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>
   <script type="module">
     import { initShell } from './assets/js/nav.js';
     import { escapeHtml, isSuspiciousUrl, sanitizeUrl, showToast } from './assets/js/utils.js';
@@ -90,8 +90,12 @@
     // Tabs
     document.querySelectorAll('[data-tk-tab]').forEach((btn) => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('[data-tk-tab]').forEach((b) => b.classList.remove('active'));
+        document.querySelectorAll('[data-tk-tab]').forEach((b) => {
+          b.classList.remove('active');
+          b.setAttribute('aria-selected', 'false');
+        });
         btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
         ['scanner', 'utm', 'embed'].forEach((t) => {
           document.getElementById(`tk-${t}`).hidden = t !== btn.dataset.tkTab;
         });
