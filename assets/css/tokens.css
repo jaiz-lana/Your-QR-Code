@@ -1,0 +1,66 @@
+/* Design Tokens — Tema Putih & Biru Windows 11 (Fluent Light + Gradasi Halus) */
+:root {
+  color-scheme: light;
+
+  /* Tipografi */
+  --font-sans: 'Inter', 'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  --font-display: 'Poppins', 'Segoe UI Variable Display', 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+
+  /* Warna Merek (Biru Windows 11 dengan gradasi halus) */
+  --brand-primary: #0067c0;
+  --brand-primary-light: #0078d4;
+  --brand-primary-hover: #0056a3;
+  --brand-gradient: linear-gradient(135deg, #0078d4 0%, #0067c0 55%, #00529b 100%);
+  --brand-gradient-hover: linear-gradient(135deg, #1084dc 0%, #005fb8 55%, #004585 100%);
+  --brand-primary-soft: rgba(0, 120, 212, 0.09);
+  --brand-accent: #0ea5e9;
+  --brand-accent-soft: rgba(14, 165, 233, 0.1);
+
+  /* Warna Permukaan & Teks (Putih Bersih + Latar Biru Sangat Halus) */
+  --bg-page: linear-gradient(160deg, #ffffff 0%, #f3f8ff 45%, #eaf2ff 100%);
+  --bg-surface: #ffffff;
+  --bg-surface-2: #f4f8fe;
+  --bg-elevated: #ffffff;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-on-brand: #ffffff;
+
+  /* Garis & Bayangan */
+  --border-color: rgba(0, 103, 192, 0.12);
+  --border-strong: rgba(0, 103, 192, 0.24);
+  --shadow-sm: 0 1px 3px rgba(0, 62, 120, 0.06), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 8px 24px rgba(0, 75, 145, 0.09), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 18px 42px rgba(0, 67, 130, 0.14), 0 4px 12px rgba(0, 0, 0, 0.05);
+
+  /* Status Semantik */
+  --status-success: #107c10;
+  --status-success-bg: #dff6dd;
+  --status-warning: #9d5d00;
+  --status-warning-bg: #fff4ce;
+  --status-danger: #c42b1c;
+  --status-danger-bg: #fde7e9;
+
+  /* Radius & Spasi (Gaya Windows 11) */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.35rem;
+  --radius-pill: 9999px;
+
+  --container-max: 1200px;
+  --header-height: 66px;
+}
+
+/* Wajib untuk mencegah scroll halaman di belakang modal <dialog> */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(6px);
+}

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modul Sekolah & Madrasah — Your QR Code</title>
+  <meta name="color-scheme" content="light">
+  <link rel="icon" type="image/svg+xml" href="../assets/img/icon.svg">
+  <link rel="stylesheet" href="../assets/css/tokens.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+  <header id="app-navbar"></header>
+
+  <main class="container section" style="padding-top:1.75rem;">
+    <div style="margin-bottom:1.25rem;">
+      <span class="badge badge-warning">Modul Sekolah / Madrasah</span>
+      <h1 style="margin:0.4rem 0 0;font-family:var(--font-display);">Verifikasi Dokumen, Perpustakaan & Inventaris Sarana</h1>
+    </div>
+
+    <div class="grid-3">
+      <!-- VERIFIKASI DOKUMEN -->
+      <section class="card">
+        <h2 style="margin-top:0;font-size:1.1rem;">Verifikasi Surat / Ijazah</h2>
+        <form id="form-doc" class="form-grid">
+          <div class="field"><label for="doc-no">Nomor Surat / Dokumen</label><input id="doc-no" class="input" value="421/SK-2026" required></div>
+          <div class="field"><label for="doc-title">Perihal / Nama Siswa</label><input id="doc-title" class="input" placeholder="Surat Keterangan Aktif" required></div>
+          <button type="submit" class="btn btn-primary btn-sm">Daftarkan & Buat QR</button>
+        </form>
+        <div id="doc-qr-out" style="margin-top:0.85rem;text-align:center;"></div>
+        <hr style="border:none;border-top:1px solid var(--border-color);margin:1rem 0;">
+        <div style="display:flex;gap:0.4rem;">
+          <input id="doc-check-id" class="input" placeholder="Cek kode verifikasi...">
+          <button type="button" id="btn-check-doc" class="btn btn-secondary btn-sm">Cek</button>
+        </div>
+        <div id="doc-check-res" style="margin-top:0.6rem;font-size:0.86rem;"></div>
+      </section>
+
+      <!-- PERPUSTAKAAN -->
+      <section class="card">
+        <h2 style="margin-top:0;font-size:1.1rem;">QR Buku Perpustakaan</h2>
+        <form id="form-book" class="form-grid">
+          <div class="field"><label for="bk-title">Kode / Judul Buku</label><input id="bk-title" class="input" placeholder="Matematika Kelas XI" required></div>
+          <div class="field"><label for="bk-status">Status</label>
+            <select id="bk-status" class="select">
+              <option value="Tersedia">Tersedia di Rak</option>
+              <option value="Dipinjam">Sedang Dipinjam</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">Simpan Label Buku</button>
+        </form>
+        <ul id="bk-list" style="margin:0.85rem 0 0;padding-left:1.1rem;font-size:0.86rem;display:grid;gap:0.35rem;"></ul>
+      </section>
+
+      <!-- INVENTARIS SARANA -->
+      <section class="card">
+        <h2 style="margin-top:0;font-size:1.1rem;">Kartu Aset Sarana</h2>
+        <form id="form-asset" class="form-grid">
+          <div class="field"><label for="as-name">Nama Barang / Ruangan</label><input id="as-name" class="input" placeholder="Proyektor Lab Komputer" required></div>
+          <div class="field"><label for="as-cond">Kondisi</label>
+            <select id="as-cond" class="select">
+              <option value="Baik">Baik</option>
+              <option value="Perlu Perbaikan">Perlu Perbaikan</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">Simpan Kartu Aset</button>
+        </form>
+        <ul id="as-list" style="margin:0.85rem 0 0;padding-left:1.1rem;font-size:0.86rem;display:grid;gap:0.35rem;"></ul>
+      </section>
+    </div>
+  </main>
+
+  <footer id="app-footer"></footer>
+
+  <script type="module">
+    import { initShell } from '../assets/js/nav.js';
+    import { getModuleDoc, queryModuleDocs, saveModuleDoc } from '../js/api.js';
+    import { createQrInstance } from '../assets/js/qr-engine.js';
+    import { escapeHtml, generateShortCode, showToast } from '../assets/js/utils.js';
+
+    initShell({ active: 'modul', basePrefix: '..' });
+
+    document.getElementById('form-doc').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = generateShortCode(7);
+      await saveModuleDoc('documents', id, {
+        nomor: document.getElementById('doc-no').value.trim(),
+        judul: document.getElementById('doc-title').value.trim(),
+        status: 'Sah'
+      });
+      document.getElementById('doc-check-id').value = id;
+      const out = document.getElementById('doc-qr-out');
+      out.innerHTML = `<div style="display:inline-block;padding:0.5rem;background:#fff;border-radius:8px;border:1px solid var(--border-color);" id="doc-qr-mount"></div><div style="font-size:0.8rem;margin-top:0.3rem;">Kode Verifikasi: <strong>${id}</strong></div>`;
+      createQrInstance(`DOC:${id}`, { size: 140, dotColor: '#0067c0', bgColor: '#fff', dotType: 'square' }).append(document.getElementById('doc-qr-mount'));
+      showToast('Dokumen terdaftar!', 'success');
+    });
+
+    document.getElementById('btn-check-doc').addEventListener('click', async () => {
+      const id = document.getElementById('doc-check-id').value.trim();
+      const doc = await getModuleDoc('documents', id);
+      const res = document.getElementById('doc-check-res');
+      res.innerHTML = doc
+        ? `<span class="badge badge-success">Dokumen Sah</span> <strong>${escapeHtml(doc.judul)}</strong> (${escapeHtml(doc.nomor)})`
+        : `<span class="badge badge-danger">Tidak terdaftar</span>`;
+    });
+
+    async function loadAssets() {
+      const books = await queryModuleDocs('assets', 'kategori', 'buku');
+      document.getElementById('bk-list').innerHTML = books.map((b) => `<li><strong>${escapeHtml(b.nama)}</strong> — ${escapeHtml(b.kondisi)}</li>`).join('');
+      const items = await queryModuleDocs('assets', 'kategori', 'sarana');
+      document.getElementById('as-list').innerHTML = items.map((a) => `<li><strong>${escapeHtml(a.nama)}</strong> — ${escapeHtml(a.kondisi)}</li>`).join('');
+    }
+
+    document.getElementById('form-book').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = generateShortCode(6);
+      await saveModuleDoc('assets', id, {
+        kategori: 'buku',
+        nama: document.getElementById('bk-title').value.trim(),
+        kondisi: document.getElementById('bk-status').value
+      });
+      e.target.reset();
+      await loadAssets();
+      showToast('Data buku disimpan!', 'success');
+    });
+
+    document.getElementById('form-asset').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = generateShortCode(6);
+      await saveModuleDoc('assets', id, {
+        kategori: 'sarana',
+        nama: document.getElementById('as-name').value.trim(),
+        kondisi: document.getElementById('as-cond').value
+      });
+      e.target.reset();
+      await loadAssets();
+      showToast('Kartu aset disimpan!', 'success');
+    });
+
+    loadAssets();
+  </script>
+</body>
+</html>

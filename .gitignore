@@ -1,0 +1,18 @@
+# Dependensi & build lokal
+node_modules/
+functions/node_modules/
+
+# Cache & file sensitif Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+*firebase-adminsdk*.json
+serviceAccountKey*.json
+.env
+.env.*
+
+# File OS & editor
+.DS_Store
+Thumbs.db
+.vscode/

@@ -1,0 +1,763 @@
+rules_version = '2';
+
+// ===============================================================
+// Model Data yang Diasumsikan (Assumed Data Model)
+// ===============================================================
+//
+// 1. users/{uid}
+//    - nama: string (wajib, 1..100 karakter)
+//    - email: string (wajib, format email valid, <= 254 karakter)
+//    - dibuat: timestamp (wajib, tidak dapat diubah setelah dibuat)
+//    - workspaceDefault: string (opsional, 1..100 karakter)
+//    - diperbarui: timestamp (opsional)
+//    - foto: string (opsional, <= 500 karakter)
+//
+// 2. workspaces/{wid}
+//    - nama: string (wajib, 1..100 karakter)
+//    - ownerUid: string (wajib, 1..128 karakter, tidak dapat diubah)
+//    - dibuat: timestamp (wajib, tidak dapat diubah)
+//    - deskripsi: string (opsional, <= 500 karakter)
+//    - logo: string (opsional, <= 500 karakter)
+//    - diperbarui: timestamp (opsional)
+//
+// 2a. workspaces/{wid}/members/{uid}
+//    - role: string (wajib, salah satu dari ['owner', 'admin', 'editor', 'viewer'])
+//    - uid: string (opsional, harus cocok dengan {uid})
+//    - nama: string (opsional, 1..100 karakter)
+//    - email: string (opsional, format email valid)
+//    - bergabung: timestamp (opsional, tidak dapat diubah)
+//    - dibuat: timestamp (opsional, tidak dapat diubah)
+//
+// 3. qrcodes/{id}, folders/{id}, brandkits/{id}
+//    - ownerUid: string (wajib, 1..128 karakter, tidak dapat diubah)
+//    - wid: string (opsional, 0..128 karakter)
+//    - nama: string (wajib, 1..150 karakter)
+//    - tipe: string (wajib pada qrcodes, 1..50 karakter)
+//    - dibuat: timestamp (opsional, tidak dapat diubah)
+//    - diperbarui: timestamp (opsional)
+//
+// 4. links/{kode}
+//    - kode: string (opsional di body, harus cocok ^[a-zA-Z0-9_-]{3,40}$)
+//    - tujuan: string (wajib, 1..2048 karakter, dilarang javascript:/data:/vbscript:)
+//    - status: string (wajib, salah satu dari ['active', 'paused', 'expired'])
+//    - ownerUid: string (wajib, 1..128 karakter, tidak dapat diubah)
+//    - wid: string (opsional, 0..128 karakter)
+//
+// 5. pages/{slug}
+//    - slug: string (opsional di body, harus cocok ^[a-zA-Z0-9_-]{2,80}$)
+//    - jenis: string (wajib, 1..50 karakter)
+//    - ownerUid: string (wajib, 1..128 karakter, tidak dapat diubah)
+//    - wid: string (opsional, 0..128 karakter)
+//
+// 6. scans/{auto}
+//    - Hanya field: kode, waktu, os, perangkat, browser, negara, kota, bahasa, referrer, hashUnik
+//
+// 7. stats/{statId}
+//    - Hanya field: total, unik, perangkat, kode, tanggal
+//
+// 8. Koleksi Modul:
+//    - Publik get, list terbatas, tulis oleh owner/editor+:
+//      forms, events, polls, loyaltyCards, products, menuItems, documents, certificates, assets, stamps
+//    - Publik create tervalidasi, baca/ubah/hapus oleh owner/editor+:
+//      formResponses, attendance, pollVotes, orders
+//    - tickets: publik get, list terbatas, update statusHadir oleh owner/editor+, create tervalidasi
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Fungsi Pembantu Umum (Helper Functions)
+    // ===============================================================
+
+    // Memeriksa apakah pengguna sudah terautentikasi
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Memeriksa apakah pengguna adalah pemilik berdasarkan UID path
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Memeriksa apakah pengguna adalah pemilik dokumen berdasarkan field ownerUid
+    function isResourceOwner(data) {
+      return isAuthenticated() &&
+        'ownerUid' in data &&
+        data.ownerUid is string &&
+        data.ownerUid == request.auth.uid;
+    }
+
+    // Memastikan semua field wajib tersedia
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // Memastikan dokumen hanya berisi field yang diizinkan (mencegah schema pollution)
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // Memastikan field yang tidak boleh diubah tetap sama saat update
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // Validasi panjang string wajib
+    function validStringLength(data, field, minLen, maxLen) {
+      return field in data &&
+        data[field] is string &&
+        data[field].size() >= minLen &&
+        data[field].size() <= maxLen;
+    }
+
+    // Validasi string opsional (jika ada, harus bertipe string dan sesuai batas panjang)
+    function isValidOptionalString(data, field, minLen, maxLen) {
+      return !(field in data) ||
+        (data[field] is string &&
+         data[field].size() >= minLen &&
+         data[field].size() <= maxLen);
+    }
+
+    // Validasi format email
+    function isValidEmail(email) {
+      return email is string &&
+        email.size() <= 254 &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // Validasi keamanan URL/tujuan tautan (mencegah XSS javascript:/data:/vbscript:)
+    function isSafeTargetUrl(url) {
+      return url is string &&
+        url.size() >= 1 &&
+        url.size() <= 2048 &&
+        !url.matches("(?i)^\\s*(javascript|data|vbscript):.*");
+    }
+
+    // ===============================================================
+    // Fungsi Pembantu Workspace & RBAC
+    // ===============================================================
+
+    // Memeriksa apakah pengguna adalah anggota workspace {wid}
+    function isWorkspaceMember(wid) {
+      return isAuthenticated() &&
+        wid is string &&
+        wid.size() > 0 &&
+        exists(/databases/$(database)/documents/workspaces/$(wid)/members/$(request.auth.uid));
+    }
+
+    // Memeriksa apakah pengguna memiliki salah satu peran (role) yang diizinkan di workspace {wid}
+    function hasWorkspaceRole(wid, roles) {
+      return isWorkspaceMember(wid) &&
+        get(/databases/$(database)/documents/workspaces/$(wid)/members/$(request.auth.uid)).data.role in roles;
+    }
+
+    // Memeriksa hak baca sumber daya (pemilik pribadi atau anggota workspace)
+    function canReadResource(data) {
+      return isResourceOwner(data) ||
+        ('wid' in data && data.wid is string && data.wid.size() > 0 && isWorkspaceMember(data.wid));
+    }
+
+    // Memeriksa hak tulis sumber daya (pemilik pribadi atau owner/admin/editor workspace)
+    function canEditResource(data) {
+      return isResourceOwner(data) ||
+        ('wid' in data && data.wid is string && data.wid.size() > 0 &&
+         hasWorkspaceRole(data.wid, ['owner', 'admin', 'editor']));
+    }
+
+    // ===============================================================
+    // Validator Domain (Digunakan pada create DAN update)
+    // ===============================================================
+
+    // Validator untuk dokumen profil pengguna (users/{uid})
+    function isValidUser(data) {
+      return hasRequiredFields(['nama', 'email', 'dibuat']) &&
+        hasOnlyAllowedFields(['nama', 'email', 'dibuat', 'workspaceDefault', 'diperbarui', 'foto']) &&
+        validStringLength(data, 'nama', 1, 100) &&
+        isValidEmail(data.email) &&
+        data.dibuat is timestamp &&
+        isValidOptionalString(data, 'workspaceDefault', 0, 100) &&
+        (!( 'diperbarui' in data ) || data.diperbarui is timestamp) &&
+        isValidOptionalString(data, 'foto', 0, 500);
+    }
+
+    // Validator untuk dokumen workspace (workspaces/{wid})
+    function isValidWorkspace(data) {
+      return hasRequiredFields(['nama', 'ownerUid', 'dibuat']) &&
+        hasOnlyAllowedFields(['nama', 'ownerUid', 'dibuat', 'deskripsi', 'logo', 'diperbarui']) &&
+        validStringLength(data, 'nama', 1, 100) &&
+        validStringLength(data, 'ownerUid', 1, 128) &&
+        data.dibuat is timestamp &&
+        isValidOptionalString(data, 'deskripsi', 0, 500) &&
+        isValidOptionalString(data, 'logo', 0, 500) &&
+        (!( 'diperbarui' in data ) || data.diperbarui is timestamp);
+    }
+
+    // Validator untuk dokumen anggota workspace (workspaces/{wid}/members/{uid})
+    function isValidWorkspaceMember(data, memberUid) {
+      return hasRequiredFields(['role']) &&
+        hasOnlyAllowedFields(['role', 'uid', 'nama', 'email', 'bergabung', 'dibuat']) &&
+        data.role in ['owner', 'admin', 'editor', 'viewer'] &&
+        (!('uid' in data) || (data.uid is string && data.uid == memberUid)) &&
+        isValidOptionalString(data, 'nama', 1, 100) &&
+        (!('email' in data) || isValidEmail(data.email)) &&
+        (!('bergabung' in data) || data.bergabung is timestamp) &&
+        (!('dibuat' in data) || data.dibuat is timestamp);
+    }
+
+    // Validator untuk dokumen QR Code (qrcodes/{id})
+    function isValidQRCode(data) {
+      return hasRequiredFields(['nama', 'tipe', 'ownerUid']) &&
+        hasOnlyAllowedFields([
+          'nama', 'tipe', 'ownerUid', 'wid', 'folderId', 'brandKitId',
+          'konten', 'data', 'gaya', 'style', 'kodeLink', 'slugHalaman',
+          'dibuat', 'diperbarui', 'catatan', 'favorit', 'tags'
+        ]) &&
+        validStringLength(data, 'nama', 1, 150) &&
+        validStringLength(data, 'tipe', 1, 50) &&
+        validStringLength(data, 'ownerUid', 1, 128) &&
+        isValidOptionalString(data, 'wid', 0, 128) &&
+        isValidOptionalString(data, 'folderId', 0, 128) &&
+        isValidOptionalString(data, 'brandKitId', 0, 128) &&
+        isValidOptionalString(data, 'kodeLink', 0, 40) &&
+        isValidOptionalString(data, 'slugHalaman', 0, 80) &&
+        isValidOptionalString(data, 'catatan', 0, 1000) &&
+        (!('favorit' in data) || data.favorit is bool) &&
+        (!('dibuat' in data) || data.dibuat is timestamp) &&
+        (!('diperbarui' in data) || data.diperbarui is timestamp) &&
+        (!('konten' in data) || (data.konten is string && data.konten.size() <= 5000) || data.konten is map) &&
+        (!('data' in data) || (data.data is map && data.data.size() <= 50)) &&
+        (!('gaya' in data) || (data.gaya is map && data.gaya.size() <= 50)) &&
+        (!('style' in data) || (data.style is map && data.style.size() <= 50)) &&
+        (!('tags' in data) || (data.tags is list && data.tags.size() <= 20));
+    }
+
+    // Validator untuk dokumen folder (folders/{id})
+    function isValidFolder(data) {
+      return hasRequiredFields(['nama', 'ownerUid']) &&
+        hasOnlyAllowedFields(['nama', 'ownerUid', 'wid', 'warna', 'ikon', 'parentId', 'dibuat', 'diperbarui']) &&
+        validStringLength(data, 'nama', 1, 100) &&
+        validStringLength(data, 'ownerUid', 1, 128) &&
+        isValidOptionalString(data, 'wid', 0, 128) &&
+        isValidOptionalString(data, 'warna', 0, 30) &&
+        isValidOptionalString(data, 'ikon', 0, 50) &&
+        isValidOptionalString(data, 'parentId', 0, 128) &&
+        (!('dibuat' in data) || data.dibuat is timestamp) &&
+        (!('diperbarui' in data) || data.diperbarui is timestamp);
+    }
+
+    // Validator untuk dokumen brand kit (brandkits/{id})
+    function isValidBrandKit(data) {
+      return hasRequiredFields(['nama', 'ownerUid']) &&
+        hasOnlyAllowedFields([
+          'nama', 'ownerUid', 'wid', 'warnaUtama', 'warnaSekunder',
+          'warnaLatar', 'logoUrl', 'gaya', 'dibuat', 'diperbarui'
+        ]) &&
+        validStringLength(data, 'nama', 1, 100) &&
+        validStringLength(data, 'ownerUid', 1, 128) &&
+        isValidOptionalString(data, 'wid', 0, 128) &&
+        isValidOptionalString(data, 'warnaUtama', 0, 30) &&
+        isValidOptionalString(data, 'warnaSekunder', 0, 30) &&
+        isValidOptionalString(data, 'warnaLatar', 0, 30) &&
+        isValidOptionalString(data, 'logoUrl', 0, 500) &&
+        (!('gaya' in data) || (data.gaya is map && data.gaya.size() <= 50)) &&
+        (!('dibuat' in data) || data.dibuat is timestamp) &&
+        (!('diperbarui' in data) || data.diperbarui is timestamp);
+    }
+
+    // Validator untuk dokumen tautan pendek (links/{kode})
+    function isValidLink(data, kode) {
+      return kode.matches("^[a-zA-Z0-9_-]{3,40}$") &&
+        hasRequiredFields(['tujuan', 'status', 'ownerUid']) &&
+        hasOnlyAllowedFields([
+          'kode', 'tujuan', 'status', 'ownerUid', 'wid', 'judul',
+          'qrId', 'kadaluarsa', 'maksKlik', 'dibuat', 'diperbarui'
+        ]) &&
+        (!('kode' in data) || (data.kode is string && data.kode == kode)) &&
+        isSafeTargetUrl(data.tujuan) &&
+        data.status in ['active', 'paused', 'expired'] &&
+        validStringLength(data, 'ownerUid', 1, 128) &&
+        isValidOptionalString(data, 'wid', 0, 128) &&
+        isValidOptionalString(data, 'judul', 0, 200) &&
+        isValidOptionalString(data, 'qrId', 0, 128) &&
+        (!('kadaluarsa' in data) || data.kadaluarsa is timestamp) &&
+        (!('maksKlik' in data) || (data.maksKlik is int && data.maksKlik >= 0)) &&
+        (!('dibuat' in data) || data.dibuat is timestamp) &&
+        (!('diperbarui' in data) || data.diperbarui is timestamp);
+    }
+
+    // Validator untuk dokumen halaman mikro (pages/{slug})
+    function isValidPage(data, slug) {
+      return slug.matches("^[a-zA-Z0-9_-]{2,80}$") &&
+        hasRequiredFields(['jenis', 'ownerUid']) &&
+        hasOnlyAllowedFields([
+          'slug', 'jenis', 'ownerUid', 'wid', 'judul', 'deskripsi',
+          'konten', 'tema', 'aktif', 'dibuat', 'diperbarui'
+        ]) &&
+        (!('slug' in data) || (data.slug is string && data.slug == slug)) &&
+        validStringLength(data, 'jenis', 1, 50) &&
+        validStringLength(data, 'ownerUid', 1, 128) &&
+        isValidOptionalString(data, 'wid', 0, 128) &&
+        isValidOptionalString(data, 'judul', 0, 200) &&
+        isValidOptionalString(data, 'deskripsi', 0, 2000) &&
+        (!('konten' in data) || (data.konten is map && data.konten.size() <= 100)) &&
+        (!('tema' in data) || (data.tema is map && data.tema.size() <= 50)) &&
+        (!('aktif' in data) || data.aktif is bool) &&
+        (!('dibuat' in data) || data.dibuat is timestamp) &&
+        (!('diperbarui' in data) || data.diperbarui is timestamp);
+    }
+
+    // Validator untuk dokumen log pemindaian (scans/{auto})
+    function isValidScan(data) {
+      return hasRequiredFields(['kode', 'waktu']) &&
+        hasOnlyAllowedFields([
+          'kode', 'waktu', 'os', 'perangkat', 'browser',
+          'negara', 'kota', 'bahasa', 'referrer', 'hashUnik'
+        ]) &&
+        data.kode is string &&
+        data.kode.matches("^[a-zA-Z0-9_-]{3,40}$") &&
+        data.waktu is timestamp &&
+        isValidOptionalString(data, 'os', 0, 50) &&
+        isValidOptionalString(data, 'perangkat', 0, 50) &&
+        isValidOptionalString(data, 'browser', 0, 50) &&
+        isValidOptionalString(data, 'negara', 0, 80) &&
+        isValidOptionalString(data, 'kota', 0, 80) &&
+        isValidOptionalString(data, 'bahasa', 0, 30) &&
+        isValidOptionalString(data, 'referrer', 0, 500) &&
+        isValidOptionalString(data, 'hashUnik', 0, 128);
+    }
+
+    // Validator pembuatan statistik harian/tautan (stats/{statId})
+    function isValidStatsCreate(data) {
+      return hasRequiredFields(['kode', 'total']) &&
+        hasOnlyAllowedFields(['total', 'unik', 'perangkat', 'kode', 'tanggal']) &&
+        data.kode is string &&
+        data.kode.matches("^[a-zA-Z0-9_-]{3,40}$") &&
+        exists(/databases/$(database)/documents/links/$(data.kode)) &&
+        data.total is int && data.total >= 0 && data.total <= 1 &&
+        (!('unik' in data) || (data.unik is int && data.unik >= 0 && data.unik <= 1)) &&
+        (!('perangkat' in data) || (data.perangkat is map && data.perangkat.size() <= 10)) &&
+        isValidOptionalString(data, 'tanggal', 0, 20);
+    }
+
+    // Validator pembaruan inkremen statistik dari r.html (stats/{statId})
+    function isValidStatsUpdate(data) {
+      return hasRequiredFields(['kode', 'total']) &&
+        hasOnlyAllowedFields(['total', 'unik', 'perangkat', 'kode', 'tanggal']) &&
+        data.kode == resource.data.kode &&
+        (!('tanggal' in resource.data) || data.tanggal == resource.data.tanggal) &&
+        data.total is int && data.total == resource.data.total + 1 &&
+        (!('unik' in data) || (
+          data.unik is int &&
+          (!('unik' in resource.data) ? (data.unik >= 0 && data.unik <= 1) : (data.unik >= resource.data.unik && data.unik <= resource.data.unik + 1))
+        )) &&
+        (!('perangkat' in data) || (data.perangkat is map && data.perangkat.size() <= 10));
+    }
+
+    // Validator umum untuk koleksi modul publik-get (forms, events, polls, dll.)
+    function isValidModuleResource(data) {
+      return hasRequiredFields(['ownerUid']) &&
+        validStringLength(data, 'ownerUid', 1, 128) &&
+        isValidOptionalString(data, 'wid', 0, 128) &&
+        isValidOptionalString(data, 'judul', 1, 200) &&
+        isValidOptionalString(data, 'nama', 1, 200) &&
+        isValidOptionalString(data, 'deskripsi', 0, 3000) &&
+        isValidOptionalString(data, 'status', 1, 40) &&
+        (!('aktif' in data) || data.aktif is bool) &&
+        (!('dibuat' in data) || data.dibuat is timestamp) &&
+        (!('diperbarui' in data) || data.diperbarui is timestamp) &&
+        data.keys().size() <= 40;
+    }
+
+    // Validator untuk formResponses/{id}
+    function isValidFormResponse(data) {
+      return hasRequiredFields(['formId', 'ownerUid', 'jawaban', 'dibuat']) &&
+        hasOnlyAllowedFields(['formId', 'ownerUid', 'wid', 'jawaban', 'responden', 'email', 'dibuat']) &&
+        validStringLength(data, 'formId', 1, 128) &&
+        validStringLength(data, 'ownerUid', 1, 128) &&
+        isValidOptionalString(data, 'wid', 0, 128) &&
+        data.jawaban is map && data.jawaban.size() >= 1 && data.jawaban.size() <= 100 &&
+        isValidOptionalString(data, 'responden', 0, 150) &&
+        (!('email' in data) || isValidEmail(data.email)) &&
+        data.dibuat is timestamp;
+    }
+
+    // Validator untuk attendance/{id}
+    function isValidAttendance(data) {
+      return hasRequiredFields(['eventId', 'ownerUid', 'nama', 'dibuat']) &&
+        hasOnlyAllowedFields(['eventId', 'ownerUid', 'wid', 'nama', 'email', 'telepon', 'status', 'dibuat']) &&
+        validStringLength(data, 'eventId', 1, 128) &&
+        validStringLength(data, 'ownerUid', 1, 128) &&
+        isValidOptionalString(data, 'wid', 0, 128) &&
+        validStringLength(data, 'nama', 1, 150) &&
+        (!('email' in data) || isValidEmail(data.email)) &&
+        isValidOptionalString(data, 'telepon', 0, 30) &&
+        (!('status' in data) || data.status in ['hadir', 'terdaftar', 'batal']) &&
+        data.dibuat is timestamp;
+    }
+
+    // Validator untuk pollVotes/{id}
+    function isValidPollVote(data) {
+      return hasRequiredFields(['pollId', 'ownerUid', 'pilihan', 'dibuat']) &&
+        hasOnlyAllowedFields(['pollId', 'ownerUid', 'wid', 'pilihan', 'pemilihHash', 'dibuat']) &&
+        validStringLength(data, 'pollId', 1, 128) &&
+        validStringLength(data, 'ownerUid', 1, 128) &&
+        isValidOptionalString(data, 'wid', 0, 128) &&
+        validStringLength(data, 'pilihan', 1, 150) &&
+        isValidOptionalString(data, 'pemilihHash', 0, 128) &&
+        data.dibuat is timestamp;
+    }
+
+    // Validator untuk orders/{id}
+    function isValidOrder(data, isCreate) {
+      return hasRequiredFields(['ownerUid', 'items', 'total', 'namaPembeli', 'status', 'dibuat']) &&
+        hasOnlyAllowedFields([
+          'ownerUid', 'wid', 'pageSlug', 'items', 'total',
+          'namaPembeli', 'telepon', 'alamat', 'catatan', 'status', 'dibuat', 'diperbarui'
+        ]) &&
+        validStringLength(data, 'ownerUid', 1, 128) &&
+        isValidOptionalString(data, 'wid', 0, 128) &&
+        isValidOptionalString(data, 'pageSlug', 0, 80) &&
+        data.items is list && data.items.size() >= 1 && data.items.size() <= 50 &&
+        data.total is number && data.total >= 0 &&
+        validStringLength(data, 'namaPembeli', 1, 150) &&
+        isValidOptionalString(data, 'telepon', 0, 30) &&
+        isValidOptionalString(data, 'alamat', 0, 500) &&
+        isValidOptionalString(data, 'catatan', 0, 500) &&
+        data.status in ['baru', 'diproses', 'selesai', 'dibatalkan'] &&
+        (!isCreate || data.status == 'baru') &&
+        data.dibuat is timestamp &&
+        (!('diperbarui' in data) || data.diperbarui is timestamp);
+    }
+
+    // Validator untuk tickets/{id}
+    function isValidTicket(data) {
+      return hasRequiredFields(['eventId', 'ownerUid', 'nama', 'statusHadir', 'dibuat']) &&
+        hasOnlyAllowedFields([
+          'eventId', 'ownerUid', 'wid', 'kodeTiket', 'nama',
+          'email', 'statusHadir', 'waktuHadir', 'dibuat', 'diperbarui'
+        ]) &&
+        validStringLength(data, 'eventId', 1, 128) &&
+        validStringLength(data, 'ownerUid', 1, 128) &&
+        isValidOptionalString(data, 'wid', 0, 128) &&
+        isValidOptionalString(data, 'kodeTiket', 1, 64) &&
+        validStringLength(data, 'nama', 1, 150) &&
+        (!('email' in data) || isValidEmail(data.email)) &&
+        data.statusHadir is bool &&
+        (!('waktuHadir' in data) || data.waktuHadir is timestamp) &&
+        data.dibuat is timestamp &&
+        (!('diperbarui' in data) || data.diperbarui is timestamp);
+    }
+
+    // ===============================================================
+    // Aturan Koleksi (Collection Rules)
+    // ===============================================================
+
+    // 1. Profil Pengguna (users/{uid})
+    // Hanya dapat dibaca dan ditulis oleh pemilik akun yang terautentikasi.
+    match /users/{uid} {
+      allow read, delete: if isOwner(uid);
+      allow create: if isOwner(uid) && isValidUser(request.resource.data);
+      allow update: if isOwner(uid) &&
+        isValidUser(request.resource.data) &&
+        areImmutableFieldsUnchanged(['dibuat']);
+    }
+
+    // 2. Workspace & Anggota (workspaces/{wid} dan workspaces/{wid}/members/{uid})
+    // Baca: hanya anggota workspace. Tulis: owner atau admin (atau pembuat awal).
+    match /workspaces/{wid} {
+      allow read: if isWorkspaceMember(wid);
+      allow create: if isAuthenticated() &&
+        isResourceOwner(request.resource.data) &&
+        isValidWorkspace(request.resource.data);
+      allow update: if hasWorkspaceRole(wid, ['owner', 'admin']) &&
+        isValidWorkspace(request.resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'dibuat']);
+      allow delete: if hasWorkspaceRole(wid, ['owner']);
+
+      match /members/{uid} {
+        allow read: if isWorkspaceMember(wid) || isOwner(uid);
+
+        // Pembuat workspace dapat menambahkan dirinya sebagai 'owner',
+        // atau owner/admin dapat menambahkan anggota baru (admin tidak boleh menetapkan role 'owner').
+        allow create: if isAuthenticated() &&
+          isValidWorkspaceMember(request.resource.data, uid) &&
+          (
+            (isOwner(uid) &&
+             request.resource.data.role == 'owner' &&
+             (
+               (exists(/databases/$(database)/documents/workspaces/$(wid)) &&
+                get(/databases/$(database)/documents/workspaces/$(wid)).data.ownerUid == request.auth.uid) ||
+               getAfter(/databases/$(database)/documents/workspaces/$(wid)).data.ownerUid == request.auth.uid
+             )) ||
+            (hasWorkspaceRole(wid, ['owner', 'admin']) &&
+             (request.resource.data.role != 'owner' || hasWorkspaceRole(wid, ['owner'])))
+          );
+
+        // Owner/admin dapat mengubah role anggota, namun pemilik utama workspace tidak boleh
+        // diturunkan dari 'owner' (menjamin selalu ada minimal satu owner).
+        allow update: if hasWorkspaceRole(wid, ['owner', 'admin']) &&
+          isValidWorkspaceMember(request.resource.data, uid) &&
+          areImmutableFieldsUnchanged(['uid', 'bergabung', 'dibuat']) &&
+          (request.resource.data.role != 'owner' || hasWorkspaceRole(wid, ['owner'])) &&
+          (resource.data.role != 'owner' || hasWorkspaceRole(wid, ['owner'])) &&
+          (uid != get(/databases/$(database)/documents/workspaces/$(wid)).data.ownerUid ||
+           request.resource.data.role == 'owner');
+
+        // Pemilik utama workspace tidak dapat dihapus; admin tidak dapat menghapus owner.
+        allow delete: if (hasWorkspaceRole(wid, ['owner', 'admin']) || isOwner(uid)) &&
+          uid != get(/databases/$(database)/documents/workspaces/$(wid)).data.ownerUid &&
+          (resource.data.role != 'owner' || hasWorkspaceRole(wid, ['owner']));
+      }
+    }
+
+    // 4. QR Codes (qrcodes/{id}) - Privat untuk pemilik atau anggota workspace
+    match /qrcodes/{id} {
+      allow read: if canReadResource(resource.data);
+      allow create: if isAuthenticated() &&
+        isResourceOwner(request.resource.data) &&
+        canEditResource(request.resource.data) &&
+        isValidQRCode(request.resource.data);
+      allow update: if canEditResource(resource.data) &&
+        canEditResource(request.resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'dibuat']) &&
+        isValidQRCode(request.resource.data);
+      allow delete: if canEditResource(resource.data);
+    }
+
+    // 5. Folder & Brand Kit (folders/{id}, brandkits/{id}) - Kontrol akses sama dengan qrcodes
+    match /folders/{id} {
+      allow read: if canReadResource(resource.data);
+      allow create: if isAuthenticated() &&
+        isResourceOwner(request.resource.data) &&
+        canEditResource(request.resource.data) &&
+        isValidFolder(request.resource.data);
+      allow update: if canEditResource(resource.data) &&
+        canEditResource(request.resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'dibuat']) &&
+        isValidFolder(request.resource.data);
+      allow delete: if canEditResource(resource.data);
+    }
+
+    match /brandkits/{id} {
+      allow read: if canReadResource(resource.data);
+      allow create: if isAuthenticated() &&
+        isResourceOwner(request.resource.data) &&
+        canEditResource(request.resource.data) &&
+        isValidBrandKit(request.resource.data);
+      allow update: if canEditResource(resource.data) &&
+        canEditResource(request.resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'dibuat']) &&
+        isValidBrandKit(request.resource.data);
+      allow delete: if canEditResource(resource.data);
+    }
+
+    // 6. Tautan Pendek (links/{kode}) - Publik get untuk r.html, list hanya untuk pemilik/anggota
+    match /links/{kode} {
+      allow get: if true;
+      allow list: if canReadResource(resource.data);
+      allow create: if isAuthenticated() &&
+        isResourceOwner(request.resource.data) &&
+        canEditResource(request.resource.data) &&
+        isValidLink(request.resource.data, kode);
+      allow update: if canEditResource(resource.data) &&
+        canEditResource(request.resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'kode', 'dibuat']) &&
+        isValidLink(request.resource.data, kode);
+      allow delete: if canEditResource(resource.data);
+    }
+
+    // 7. Halaman Mikro (pages/{slug}) - Publik get untuk p.html, list hanya untuk pemilik/anggota
+    match /pages/{slug} {
+      allow get: if true;
+      allow list: if canReadResource(resource.data);
+      allow create: if isAuthenticated() &&
+        isResourceOwner(request.resource.data) &&
+        canEditResource(request.resource.data) &&
+        isValidPage(request.resource.data, slug);
+      allow update: if canEditResource(resource.data) &&
+        canEditResource(request.resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'slug', 'dibuat']) &&
+        isValidPage(request.resource.data, slug);
+      allow delete: if canEditResource(resource.data);
+    }
+
+    // 8. Log Pemindaian (scans/{auto}) - Publik create tervalidasi, baca hanya oleh pemilik link
+    match /scans/{auto} {
+      allow read: if isAuthenticated() &&
+        exists(/databases/$(database)/documents/links/$(resource.data.kode)) &&
+        canReadResource(get(/databases/$(database)/documents/links/$(resource.data.kode)).data);
+      allow create: if isValidScan(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // 9. Statistik Pemindaian (stats/{statId}) - Inkremen publik dari r.html, baca oleh pemilik/anggota
+    match /stats/{statId} {
+      allow read: if isAuthenticated() &&
+        exists(/databases/$(database)/documents/links/$(resource.data.kode)) &&
+        canReadResource(get(/databases/$(database)/documents/links/$(resource.data.kode)).data);
+      allow create: if isValidStatsCreate(request.resource.data);
+      allow update: if isValidStatsUpdate(request.resource.data);
+      allow delete: if isAuthenticated() &&
+        exists(/databases/$(database)/documents/links/$(resource.data.kode)) &&
+        canEditResource(get(/databases/$(database)/documents/links/$(resource.data.kode)).data);
+    }
+
+    // 10a. Koleksi Modul Publik-Get (Tampil/Verifikasi publik di p.html, kelola oleh owner/editor+)
+    match /forms/{id} {
+      allow get: if true;
+      allow list: if canReadResource(resource.data);
+      allow create: if isAuthenticated() && isResourceOwner(request.resource.data) &&
+        canEditResource(request.resource.data) && isValidModuleResource(request.resource.data);
+      allow update: if canEditResource(resource.data) && canEditResource(request.resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'dibuat']) && isValidModuleResource(request.resource.data);
+      allow delete: if canEditResource(resource.data);
+    }
+
+    match /events/{id} {
+      allow get: if true;
+      allow list: if canReadResource(resource.data);
+      allow create: if isAuthenticated() && isResourceOwner(request.resource.data) &&
+        canEditResource(request.resource.data) && isValidModuleResource(request.resource.data);
+      allow update: if canEditResource(resource.data) && canEditResource(request.resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'dibuat']) && isValidModuleResource(request.resource.data);
+      allow delete: if canEditResource(resource.data);
+    }
+
+    match /polls/{id} {
+      allow get: if true;
+      allow list: if canReadResource(resource.data);
+      allow create: if isAuthenticated() && isResourceOwner(request.resource.data) &&
+        canEditResource(request.resource.data) && isValidModuleResource(request.resource.data);
+      allow update: if canEditResource(resource.data) && canEditResource(request.resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'dibuat']) && isValidModuleResource(request.resource.data);
+      allow delete: if canEditResource(resource.data);
+    }
+
+    match /loyaltyCards/{id} {
+      allow get: if true;
+      allow list: if canReadResource(resource.data);
+      allow create: if isAuthenticated() && isResourceOwner(request.resource.data) &&
+        canEditResource(request.resource.data) && isValidModuleResource(request.resource.data);
+      allow update: if canEditResource(resource.data) && canEditResource(request.resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'dibuat']) && isValidModuleResource(request.resource.data);
+      allow delete: if canEditResource(resource.data);
+    }
+
+    match /products/{id} {
+      allow get: if true;
+      allow list: if canReadResource(resource.data);
+      allow create: if isAuthenticated() && isResourceOwner(request.resource.data) &&
+        canEditResource(request.resource.data) && isValidModuleResource(request.resource.data);
+      allow update: if canEditResource(resource.data) && canEditResource(request.resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'dibuat']) && isValidModuleResource(request.resource.data);
+      allow delete: if canEditResource(resource.data);
+    }
+
+    match /menuItems/{id} {
+      allow get: if true;
+      allow list: if canReadResource(resource.data);
+      allow create: if isAuthenticated() && isResourceOwner(request.resource.data) &&
+        canEditResource(request.resource.data) && isValidModuleResource(request.resource.data);
+      allow update: if canEditResource(resource.data) && canEditResource(request.resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'dibuat']) && isValidModuleResource(request.resource.data);
+      allow delete: if canEditResource(resource.data);
+    }
+
+    match /documents/{id} {
+      allow get: if true;
+      allow list: if canReadResource(resource.data);
+      allow create: if isAuthenticated() && isResourceOwner(request.resource.data) &&
+        canEditResource(request.resource.data) && isValidModuleResource(request.resource.data);
+      allow update: if canEditResource(resource.data) && canEditResource(request.resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'dibuat']) && isValidModuleResource(request.resource.data);
+      allow delete: if canEditResource(resource.data);
+    }
+
+    match /certificates/{id} {
+      allow get: if true;
+      allow list: if canReadResource(resource.data);
+      allow create: if isAuthenticated() && isResourceOwner(request.resource.data) &&
+        canEditResource(request.resource.data) && isValidModuleResource(request.resource.data);
+      allow update: if canEditResource(resource.data) && canEditResource(request.resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'dibuat']) && isValidModuleResource(request.resource.data);
+      allow delete: if canEditResource(resource.data);
+    }
+
+    match /assets/{id} {
+      allow get: if true;
+      allow list: if canReadResource(resource.data);
+      allow create: if isAuthenticated() && isResourceOwner(request.resource.data) &&
+        canEditResource(request.resource.data) && isValidModuleResource(request.resource.data);
+      allow update: if canEditResource(resource.data) && canEditResource(request.resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'dibuat']) && isValidModuleResource(request.resource.data);
+      allow delete: if canEditResource(resource.data);
+    }
+
+    // 10b. Stempel Loyalitas (stamps/{id}) - Publik get atau baca pemilik, tulis oleh owner/editor+
+    match /stamps/{id} {
+      allow get: if true;
+      allow list: if canReadResource(resource.data);
+      allow create: if isAuthenticated() && isResourceOwner(request.resource.data) &&
+        canEditResource(request.resource.data) && isValidModuleResource(request.resource.data);
+      allow update: if canEditResource(resource.data) && canEditResource(request.resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'dibuat']) && isValidModuleResource(request.resource.data);
+      allow delete: if canEditResource(resource.data);
+    }
+
+    // 10c. Koleksi Pengiriman Publik (Publik create tervalidasi, baca/ubah/hapus oleh owner/editor+)
+    match /formResponses/{id} {
+      allow read, delete: if canEditResource(resource.data);
+      allow create: if isValidFormResponse(request.resource.data);
+      allow update: if canEditResource(resource.data) &&
+        areImmutableFieldsUnchanged(['formId', 'ownerUid', 'dibuat']) &&
+        isValidFormResponse(request.resource.data);
+    }
+
+    match /attendance/{id} {
+      allow read, delete: if canEditResource(resource.data);
+      allow create: if isValidAttendance(request.resource.data);
+      allow update: if canEditResource(resource.data) &&
+        areImmutableFieldsUnchanged(['eventId', 'ownerUid', 'dibuat']) &&
+        isValidAttendance(request.resource.data);
+    }
+
+    match /pollVotes/{id} {
+      allow read, delete: if canEditResource(resource.data);
+      allow create: if isValidPollVote(request.resource.data);
+      allow update: if canEditResource(resource.data) &&
+        areImmutableFieldsUnchanged(['pollId', 'ownerUid', 'dibuat']) &&
+        isValidPollVote(request.resource.data);
+    }
+
+    match /orders/{id} {
+      allow read, delete: if canEditResource(resource.data);
+      allow create: if isValidOrder(request.resource.data, true);
+      allow update: if canEditResource(resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'dibuat']) &&
+        isValidOrder(request.resource.data, false);
+    }
+
+    // 10d. Tiket Acara (tickets/{id}) - Publik get untuk check-in, update statusHadir oleh owner/editor+
+    match /tickets/{id} {
+      allow get: if true;
+      allow list: if canReadResource(resource.data);
+      allow create: if isValidTicket(request.resource.data) &&
+        (canEditResource(request.resource.data) ||
+         (request.resource.data.statusHadir == false &&
+          exists(/databases/$(database)/documents/events/$(request.resource.data.eventId))));
+      allow update: if canEditResource(resource.data) &&
+        areImmutableFieldsUnchanged(['ownerUid', 'eventId', 'dibuat']) &&
+        isValidTicket(request.resource.data);
+      allow delete: if canEditResource(resource.data);
+    }
+
+    // ===============================================================
+    // Fallback Default: Tolak Semua Akses Lainnya (Default Deny-All)
+    // ===============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

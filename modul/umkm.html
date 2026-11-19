@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modul UMKM — Your QR Code</title>
+  <meta name="color-scheme" content="light">
+  <link rel="icon" type="image/svg+xml" href="../assets/img/icon.svg">
+  <link rel="stylesheet" href="../assets/css/tokens.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+  <header id="app-navbar"></header>
+
+  <main class="container section" style="padding-top:1.75rem;">
+    <div style="margin-bottom:1.25rem;">
+      <span class="badge badge-danger">Modul UMKM & Kuliner</span>
+      <h1 style="margin:0.4rem 0 0;font-family:var(--font-display);">Menu WhatsApp per Meja, Kartu Loyalti & Label Produk</h1>
+    </div>
+
+    <div class="grid-3">
+      <!-- MENU WHATSAPP -->
+      <section class="card">
+        <h2 style="margin-top:0;font-size:1.1rem;">Menu Digital + Order WA</h2>
+        <form id="form-umkm-menu" class="form-grid">
+          <div class="field"><label for="um-name">Nama Kedai / Toko</label><input id="um-name" class="input" value="Kedai Kopi Nusantara" required></div>
+          <div class="field"><label for="um-wa">No. WhatsApp Penjual</label><input id="um-wa" class="input" value="6281234567890" required></div>
+          <div class="field"><label for="um-items">Daftar Menu (Nama | Harga)</label><textarea id="um-items" class="textarea">Es Kopi Susu | 15000
+Pisang Bakar | 12000</textarea></div>
+          <button type="submit" class="btn btn-primary btn-sm">Buat Halaman Menu & QR</button>
+        </form>
+        <div id="um-menu-out" style="margin-top:0.85rem;text-align:center;"></div>
+      </section>
+
+      <!-- KARTU LOYALTI -->
+      <section class="card">
+        <h2 style="margin-top:0;font-size:1.1rem;">Kartu Stempel Loyalti</h2>
+        <p style="font-size:0.88rem;color:var(--text-secondary);">Kumpulkan 5 stempel untuk mendapatkan 1 minuman gratis.</p>
+        <div id="stamp-dots" style="display:flex;gap:0.5rem;margin-bottom:1rem;"></div>
+        <div style="display:flex;gap:0.5rem;">
+          <button type="button" id="btn-add-stamp" class="btn btn-accent btn-sm">+ Tambah 1 Stempel</button>
+          <button type="button" id="btn-reset-stamp" class="btn btn-secondary btn-sm">Reset</button>
+        </div>
+      </section>
+
+      <!-- LABEL PRODUK -->
+      <section class="card">
+        <h2 style="margin-top:0;font-size:1.1rem;">QR Label Kemasan (PIRT/Halal)</h2>
+        <form id="form-label" class="form-grid">
+          <div class="field"><label for="lb-name">Nama Produk</label><input id="lb-name" class="input" value="Keripik Tempe Gurih" required></div>
+          <div class="field"><label for="lb-info">Info PIRT / Halal / Komposisi</label><textarea id="lb-info" class="textarea">PIRT: 2153273010123-26 | Halal ID321100001 | Komposisi: Kedelai, Tepung Beras, Rempah.</textarea></div>
+          <button type="submit" class="btn btn-primary btn-sm">Generate QR Label</button>
+        </form>
+        <div id="lb-qr-out" style="margin-top:0.85rem;text-align:center;"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer id="app-footer"></footer>
+
+  <script type="module">
+    import { initShell } from '../assets/js/nav.js';
+    import { buildHostedPageUrl } from '../js/config.js';
+    import { saveHostedPage } from '../js/api.js';
+    import { createQrInstance } from '../assets/js/qr-engine.js';
+    import { generateShortCode, showToast } from '../assets/js/utils.js';
+
+    initShell({ active: 'modul', basePrefix: '..' });
+
+    document.getElementById('form-umkm-menu').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const slug = `menu-${generateShortCode(5)}`;
+      await saveHostedPage(slug, 'page-menu', {
+        title: document.getElementById('um-name').value.trim(),
+        desc: 'Pilih menu lalu kirim pesanan langsung ke WhatsApp kami.',
+        waPhone: document.getElementById('um-wa').value.trim(),
+        itemsRaw: document.getElementById('um-items').value
+      });
+      const url = `${buildHostedPageUrl(slug)}&meja=1`;
+      const out = document.getElementById('um-menu-out');
+      out.innerHTML = `<div style="display:inline-block;padding:0.5rem;background:#fff;border-radius:8px;border:1px solid var(--border-color);" id="um-qr-m"></div><div style="margin-top:0.4rem;"><a href="${url}" target="_blank" rel="noopener">Buka Menu Meja 1 →</a></div>`;
+      createQrInstance(url, { size: 150, dotColor: '#0067c0', bgColor: '#fff', dotType: 'rounded' }).append(document.getElementById('um-qr-m'));
+      showToast('Menu Digital UMKM aktif!', 'success');
+    });
+
+    // Loyalti
+    let stamps = Number(localStorage.getItem('umkm_stamps') || 2);
+    function renderStamps() {
+      const box = document.getElementById('stamp-dots');
+      box.innerHTML = Array.from({ length: 5 }).map((_, i) => `
+        <div style="width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:700;border:2px solid var(--brand-primary);background:${i < stamps ? 'var(--brand-gradient)' : 'transparent'};color:${i < stamps ? '#fff' : 'var(--text-secondary)'};">
+          ${i < stamps ? '✓' : i + 1}
+        </div>
+      `).join('');
+    }
+    document.getElementById('btn-add-stamp').addEventListener('click', () => {
+      stamps = Math.min(5, stamps + 1);
+      localStorage.setItem('umkm_stamps', String(stamps));
+      renderStamps();
+      if (stamps === 5) showToast('Selamat! Pelanggan berhak mendapat 1 hadiah gratis!', 'success');
+    });
+    document.getElementById('btn-reset-stamp').addEventListener('click', () => {
+      stamps = 0;
+      localStorage.setItem('umkm_stamps', '0');
+      renderStamps();
+    });
+    renderStamps();
+
+    // Label Produk
+    document.getElementById('form-label').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = `${document.getElementById('lb-name').value}\n${document.getElementById('lb-info').value}`;
+      const out = document.getElementById('lb-qr-out');
+      out.innerHTML = '<div style="display:inline-block;padding:0.5rem;background:#fff;border-radius:8px;border:1px solid var(--border-color);" id="lb-qr-m"></div>';
+      createQrInstance(text, { size: 140, dotColor: '#0f172a', bgColor: '#fff', dotType: 'rounded' }).append(document.getElementById('lb-qr-m'));
+      showToast('QR Label Produk dibuat!', 'success');
+    });
+  </script>
+</body>
+</html>

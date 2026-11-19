@@ -1,0 +1,12 @@
+{
+  "name": "your-qr-code-functions",
+  "description": "Cloud Functions opsional (paket Firebase Blaze) untuk redirect 302 asli dan verifikasi kata sandi sisi server.",
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.5.0",
+    "firebase-functions": "^5.1.0"
+  }
+}

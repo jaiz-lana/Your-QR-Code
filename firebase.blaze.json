@@ -1,0 +1,30 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default"
+    }
+  ],
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "firebase.blaze.json",
+      "docs/**",
+      ".git/**",
+      "README.md",
+      "CONTRIBUTING.md"
+    ],
+    "rewrites": [
+      { "source": "/r/**", "function": "redirect" },
+      { "source": "/p/**", "destination": "/p.html" }
+    ]
+  }
+}

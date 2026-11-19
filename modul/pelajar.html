@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modul Pelajar — Your QR Code</title>
+  <meta name="color-scheme" content="light">
+  <link rel="icon" type="image/svg+xml" href="../assets/img/icon.svg">
+  <link rel="stylesheet" href="../assets/css/tokens.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+  <header id="app-navbar"></header>
+
+  <main class="container section" style="padding-top:1.75rem;">
+    <div style="margin-bottom:1.25rem;">
+      <span class="badge badge-primary">Modul Pelajar</span>
+      <h1 style="margin:0.4rem 0 0;font-family:var(--font-display);">Presensi Kelas, Pengumpulan Tugas & Kuis Mini</h1>
+    </div>
+
+    <div class="tabs">
+      <button type="button" class="tab-btn active" data-p-tab="presensi">QR Presensi Berputar</button>
+      <button type="button" class="tab-btn" data-p-tab="checkin">Form Check-in Siswa</button>
+      <button type="button" class="tab-btn" data-p-tab="tugas">Pengumpulan Tugas</button>
+      <button type="button" class="tab-btn" data-p-tab="kuis">Kuis Mini</button>
+    </div>
+
+    <!-- PRESENSI BERPUTAR -->
+    <section id="p-presensi" class="grid-2">
+      <div class="card">
+        <h2 style="margin-top:0;font-size:1.1rem;">Buat Sesi Presensi Kelas</h2>
+        <div class="form-grid">
+          <div class="field"><label for="att-course">Nama Mata Pelajaran / Kuliah</label><input id="att-course" class="input" value="Pemrograman Web - XI RPL"></div>
+          <div class="field"><label for="att-interval">Interval Rotasi Token (detik)</label><input id="att-interval" type="number" class="input" value="60" min="15"></div>
+          <button type="button" id="btn-start-att" class="btn btn-primary">Mulai Sesi & Tampilkan QR</button>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--border-color);margin:1.25rem 0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <strong>Rekap Hadir (<span id="att-count">0</span>)</strong>
+          <button type="button" id="btn-export-att" class="btn btn-secondary btn-sm">Unduh CSV</button>
+        </div>
+        <ul id="att-list" style="margin:0.75rem 0 0;padding-left:1.2rem;font-size:0.9rem;"></ul>
+      </div>
+
+      <div class="card" style="text-align:center;">
+        <div id="att-qr-mount" style="display:inline-block;padding:0.75rem;background:#fff;border-radius:12px;border:1px solid var(--border-color);min-height:220px;min-width:220px;"></div>
+        <div style="margin-top:0.75rem;">
+          Token Aktif: <strong id="att-token-lbl" style="font-family:var(--font-mono);">-</strong>
+          <div id="att-countdown" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.75rem;">Klik "Mulai Sesi" untuk menampilkan QR</div>
+          <button type="button" id="btn-test-checkin" class="btn btn-secondary btn-sm" hidden>Simulasi Check-in Siswa →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHECK-IN SISWA -->
+    <section id="p-checkin" class="card" hidden style="max-width:540px;">
+      <h2 style="margin-top:0;">Check-in Presensi</h2>
+      <form id="form-checkin" class="form-grid">
+        <div class="field"><label for="ci-sesi">Kode Sesi</label><input id="ci-sesi" class="input" required placeholder="Otomatis dari QR atau ketik..."></div>
+        <div class="field"><label for="ci-nama">Nama Lengkap</label><input id="ci-nama" class="input" required placeholder="Contoh: Siti Aminah"></div>
+        <div class="field"><label for="ci-nim">NIS / NIM / Kelas</label><input id="ci-nim" class="input" required placeholder="Contoh: XI RPL 1 / 202401"></div>
+        <button type="submit" class="btn btn-primary">Kirim Kehadiran</button>
+      </form>
+    </section>
+
+    <!-- PENGUMPULAN TUGAS -->
+    <section id="p-tugas" class="grid-2" hidden>
+      <div class="card">
+        <h2 style="margin-top:0;font-size:1.1rem;">Kumpulkan Tugas</h2>
+        <form id="form-tugas" class="form-grid">
+          <div class="field"><label for="tg-nama">Nama Siswa</label><input id="tg-nama" class="input" required placeholder="Contoh: Andi Wijaya"></div>
+          <div class="field"><label for="tg-judul">Judul Tugas / Mapel</label><input id="tg-judul" class="input" required placeholder="Laporan Praktikum 1"></div>
+          <div class="field"><label for="tg-link">Tautan Google Drive / File</label><input id="tg-link" type="url" class="input" required placeholder="https://drive.google.com/..."></div>
+          <button type="submit" class="btn btn-primary">Kirim Tugas</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2 style="margin-top:0;font-size:1.1rem;">Daftar Tugas Masuk</h2>
+        <ul id="tg-list" style="margin:0;padding-left:1.2rem;display:grid;gap:0.45rem;font-size:0.9rem;"></ul>
+      </div>
+    </section>
+
+    <!-- KUIS MINI -->
+    <section id="p-kuis" class="card" hidden style="max-width:680px;">
+      <h2 style="margin-top:0;">Buat Kuis Mini via QR</h2>
+      <div class="form-grid">
+        <div class="field"><label for="qz-q">Pertanyaan</label><input id="qz-q" class="input" value="Apa kepanjangan dari QR pada QR Code?"></div>
+        <div class="field"><label for="qz-opts">Pilihan Jawaban (pisahkan dengan koma)</label><input id="qz-opts" class="input" value="Quick Response,Quality Read,Quick Render"></div>
+        <div class="field"><label for="qz-ans">Jawaban Benar</label><input id="qz-ans" class="input" value="Quick Response"></div>
+        <button type="button" id="btn-gen-quiz" class="btn btn-primary">Simpan & Tampilkan Pratinjau Kuis</button>
+      </div>
+      <div id="qz-preview" class="card" style="margin-top:1rem;background:var(--bg-surface-2);" hidden></div>
+    </section>
+  </main>
+
+  <footer id="app-footer"></footer>
+
+  <script type="module">
+    import { initShell } from '../assets/js/nav.js';
+    import { APP_CONFIG } from '../js/config.js';
+    import { queryModuleDocs, saveModuleDoc } from '../js/api.js';
+    import { createQrInstance } from '../assets/js/qr-engine.js';
+    import { escapeHtml, generateShortCode, sanitizeUrl, showToast } from '../assets/js/utils.js';
+
+    initShell({ active: 'modul', basePrefix: '..' });
+    if (!APP_CONFIG.modules.pelajar) {
+      document.querySelector('main').innerHTML = '<div class="card">Modul Pelajar dinonaktifkan di <code>js/config.js</code>.</div>';
+    }
+
+    function openTab(tab) {
+      document.querySelectorAll('[data-p-tab]').forEach((b) => b.classList.toggle('active', b.dataset.pTab === tab));
+      ['presensi', 'checkin', 'tugas', 'kuis'].forEach((t) => {
+        document.getElementById(`p-${t}`).hidden = t !== tab;
+      });
+    }
+
+    document.querySelectorAll('[data-p-tab]').forEach((btn) => {
+      btn.addEventListener('click', () => openTab(btn.dataset.pTab));
+    });
+
+    let currentSessionId = '';
+    let timer = null;
+    let attRows = [];
+
+    function renderAttQr(token) {
+      const mount = document.getElementById('att-qr-mount');
+      mount.innerHTML = '';
+      const url = `${window.location.origin}${window.location.pathname}?sesi=${currentSessionId}&tok=${token}`;
+      createQrInstance(url, { size: 220, dotColor: '#0067c0', bgColor: '#ffffff', dotType: 'rounded' }).append(mount);
+      document.getElementById('att-token-lbl').textContent = token;
+      document.getElementById('btn-test-checkin').hidden = false;
+    }
+
+    async function loadAttList() {
+      if (!currentSessionId) return;
+      attRows = await queryModuleDocs('attendance', 'sesiId', currentSessionId);
+      document.getElementById('att-count').textContent = attRows.length;
+      document.getElementById('att-list').innerHTML = attRows.length
+        ? attRows.map((r) => `<li><strong>${escapeHtml(r.nama)}</strong> (${escapeHtml(r.nim)})</li>`).join('')
+        : '<li style="color:var(--text-muted);">Belum ada siswa check-in.</li>';
+    }
+
+    document.getElementById('btn-start-att')?.addEventListener('click', () => {
+      currentSessionId = generateShortCode(6);
+      document.getElementById('ci-sesi').value = currentSessionId;
+      const intervalSec = Math.max(15, Number(document.getElementById('att-interval').value || 60));
+      let left = intervalSec;
+      renderAttQr(generateShortCode(5));
+      loadAttList();
+      clearInterval(timer);
+      timer = setInterval(() => {
+        left -= 1;
+        if (left <= 0) {
+          left = intervalSec;
+          renderAttQr(generateShortCode(5));
+          loadAttList();
+        }
+        document.getElementById('att-countdown').textContent = `Token berganti dalam ${left} detik`;
+      }, 1000);
+      showToast('Sesi presensi dimulai!', 'success');
+    });
+
+    document.getElementById('btn-test-checkin')?.addEventListener('click', () => openTab('checkin'));
+
+    document.getElementById('form-checkin')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const sesiId = document.getElementById('ci-sesi').value.trim();
+      const nama = document.getElementById('ci-nama').value.trim();
+      const nim = document.getElementById('ci-nim').value.trim();
+      const dupKey = `att_done_${sesiId}_${nim}`;
+      if (localStorage.getItem(dupKey)) {
+        showToast('Anda sudah melakukan presensi untuk sesi ini.', 'warning');
+        return;
+      }
+      await saveModuleDoc('attendance', null, { sesiId, nama, nim, waktu: new Date().toISOString() });
+      localStorage.setItem(dupKey, '1');
+      showToast('Kehadiran berhasil dicatat!', 'success');
+      if (sesiId === currentSessionId) await loadAttList();
+      e.target.reset();
+      document.getElementById('ci-sesi').value = sesiId;
+    });
+
+    document.getElementById('btn-export-att')?.addEventListener('click', () => {
+      const csv = 'nama,nim,waktu\n' + attRows.map((r) => `"${r.nama}","${r.nim}",${r.waktu}`).join('\n');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+      a.download = `presensi-${currentSessionId || 'kelas'}.csv`;
+      a.click();
+    });
+
+    // Tugas
+    async function loadTugas() {
+      const rows = await queryModuleDocs('formResponses', 'formId', 'tugas_kelas');
+      document.getElementById('tg-list').innerHTML = rows.length
+        ? rows.map((r) => `<li><strong>${escapeHtml(r.nama)}</strong> — ${escapeHtml(r.judul)} (<a href="${sanitizeUrl(r.link)}" target="_blank" rel="noopener">Buka</a>)</li>`).join('')
+        : '<li style="color:var(--text-muted);">Belum ada tugas terkumpul.</li>';
+    }
+    document.getElementById('form-tugas')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await saveModuleDoc('formResponses', null, {
+        formId: 'tugas_kelas',
+        nama: document.getElementById('tg-nama').value.trim(),
+        judul: document.getElementById('tg-judul').value.trim(),
+        link: sanitizeUrl(document.getElementById('tg-link').value)
+      });
+      e.target.reset();
+      await loadTugas();
+      showToast('Tugas berhasil dikumpulkan!', 'success');
+    });
+    loadTugas();
+
+    // Kuis
+    document.getElementById('btn-gen-quiz')?.addEventListener('click', () => {
+      const q = document.getElementById('qz-q').value;
+      const opts = document.getElementById('qz-opts').value.split(',').map((s) => s.trim()).filter(Boolean);
+      const ans = document.getElementById('qz-ans').value.trim();
+      const box = document.getElementById('qz-preview');
+      box.hidden = false;
+      box.innerHTML = `<strong>${escapeHtml(q)}</strong><div style="display:grid;gap:0.45rem;margin-top:0.75rem;">` +
+        opts.map((o) => `<button type="button" class="btn btn-secondary btn-sm" data-opt="${escapeHtml(o)}">${escapeHtml(o)}</button>`).join('') +
+        `</div>`;
+      box.querySelectorAll('[data-opt]').forEach((b) => {
+        b.addEventListener('click', () => {
+          showToast(b.dataset.opt === ans ? 'Jawaban Benar!' : 'Kurang tepat, coba lagi.', b.dataset.opt === ans ? 'success' : 'warning');
+        });
+      });
+    });
+
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('sesi')) {
+      document.getElementById('ci-sesi').value = p.get('sesi');
+      openTab('checkin');
+    }
+  </script>
+</body>
+</html>

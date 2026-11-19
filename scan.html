@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scanner QR & Toolkit — Your QR Code</title>
+  <meta name="color-scheme" content="light">
+  <link rel="icon" type="image/svg+xml" href="./assets/img/icon.svg">
+  <link rel="stylesheet" href="./assets/css/tokens.css">
+  <link rel="stylesheet" href="./assets/css/app.css">
+</head>
+<body>
+  <header id="app-navbar"></header>
+
+  <main class="container section" style="padding-top:1.75rem;max-width:960px;">
+    <h1 style="margin:0 0 0.35rem;font-family:var(--font-display);">Scanner QR & Toolkit</h1>
+    <p style="margin:0 0 1.25rem;color:var(--text-secondary);">Pindai QR langsung dari kamera atau gambar (tampilkan tujuan dulu demi keamanan), bangun tautan UTM, atau buat widget embed.</p>
+
+    <div class="tabs">
+      <button type="button" class="tab-btn active" data-tk-tab="scanner">📷 Scanner QR</button>
+      <button type="button" class="tab-btn" data-tk-tab="utm">🔗 UTM Builder</button>
+      <button type="button" class="tab-btn" data-tk-tab="embed">🧩 Widget Embed</button>
+    </div>
+
+    <!-- TAB SCANNER -->
+    <section id="tk-scanner" class="grid-2">
+      <div class="card">
+        <h2 style="margin-top:0;font-size:1.1rem;">Pindai Kamera / Gambar</h2>
+        <div id="qr-reader" style="width:100%;border-radius:var(--radius-md);overflow:hidden;background:var(--bg-surface-2);min-height:220px;"></div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.85rem;flex-wrap:wrap;">
+          <button type="button" id="btn-start-cam" class="btn btn-primary">Mulai Kamera</button>
+          <button type="button" id="btn-stop-cam" class="btn btn-secondary" disabled>Hentikan</button>
+        </div>
+        <div class="field" style="margin-top:1rem;">
+          <label for="scan-image-file">Atau Baca QR dari File Gambar</label>
+          <input type="file" id="scan-image-file" class="input" accept="image/*">
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0;font-size:1.1rem;">Hasil Pindaian (Pratinjau Aman)</h2>
+        <div id="scan-result-box" style="padding:1rem;border-radius:var(--radius-md);background:var(--bg-surface-2);min-height:120px;word-break:break-all;">
+          Belum ada QR yang dipindai.
+        </div>
+        <div id="scan-actions" style="display:none;gap:0.5rem;margin-top:0.85rem;flex-wrap:wrap;">
+          <a id="scan-open-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Buka Tautan</a>
+          <button type="button" id="scan-copy-btn" class="btn btn-secondary">Salin Teks</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB UTM BUILDER -->
+    <section id="tk-utm" class="card" hidden>
+      <h2 style="margin-top:0;">Pembuat Tautan Kampanye (UTM Builder)</h2>
+      <div class="form-row form-row-2">
+        <div class="field"><label>URL Tujuan</label><input id="utm-url" class="input" placeholder="https://sekolah.sch.id/ppdb"></div>
+        <div class="field"><label>Source (Sumber)</label><input id="utm-src" class="input" placeholder="brosur_qr"></div>
+        <div class="field"><label>Medium</label><input id="utm-med" class="input" placeholder="cetak_a4"></div>
+        <div class="field"><label>Campaign</label><input id="utm-camp" class="input" placeholder="ppdb_2026"></div>
+      </div>
+      <div class="field" style="margin-top:1rem;">
+        <label>Hasil URL dengan UTM</label>
+        <input id="utm-result" class="input" readonly>
+      </div>
+    </section>
+
+    <!-- TAB WIDGET EMBED -->
+    <section id="tk-embed" class="card" hidden>
+      <h2 style="margin-top:0;">Widget Embed untuk Situs Sekolah / Ormawa</h2>
+      <div class="field" style="margin-bottom:0.75rem;">
+        <label for="embed-url">Tautan Halaman QR / Generator</label>
+        <input id="embed-url" class="input" value="https://yourqrcode.pages.dev/generator.html">
+      </div>
+      <div class="field">
+        <label>Salin Kode HTML Iframe</label>
+        <textarea id="embed-code" class="textarea" readonly></textarea>
+      </div>
+    </section>
+  </main>
+
+  <footer id="app-footer"></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script type="module">
+    import { initShell } from './assets/js/nav.js';
+    import { escapeHtml, isSuspiciousUrl, sanitizeUrl, showToast } from './assets/js/utils.js';
+
+    initShell({ active: 'scan', basePrefix: '.' });
+
+    // Tabs
+    document.querySelectorAll('[data-tk-tab]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-tk-tab]').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        ['scanner', 'utm', 'embed'].forEach((t) => {
+          document.getElementById(`tk-${t}`).hidden = t !== btn.dataset.tkTab;
+        });
+      });
+    });
+
+    // Scanner
+    let html5QrCode = null;
+    const resultBox = document.getElementById('scan-result-box');
+    const actionsBox = document.getElementById('scan-actions');
+    const openLink = document.getElementById('scan-open-link');
+    let lastDecoded = '';
+
+    function handleDecoded(text) {
+      lastDecoded = text;
+      const safe = sanitizeUrl(text);
+      const isUrl = /^https?:\/\//i.test(text.trim());
+      let warn = '';
+      if (isUrl && isSuspiciousUrl(safe)) {
+        warn = '<div class="badge badge-danger" style="margin-top:0.5rem;">⚠️ Domain terlihat mencurigakan!</div>';
+      }
+      resultBox.innerHTML = `<strong>Isi QR:</strong><div style="margin-top:0.35rem;">${escapeHtml(text)}</div>${warn}`;
+      actionsBox.style.display = 'flex';
+      if (isUrl && safe) {
+        openLink.style.display = 'inline-flex';
+        openLink.href = safe;
+      } else {
+        openLink.style.display = 'none';
+      }
+    }
+
+    document.getElementById('btn-start-cam').addEventListener('click', async () => {
+      try {
+        html5QrCode = html5QrCode || new window.Html5Qrcode('qr-reader');
+        await html5QrCode.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 220, height: 220 } },
+          (decoded) => {
+            handleDecoded(decoded);
+            showToast('QR berhasil dipindai!', 'success');
+          }
+        );
+        document.getElementById('btn-start-cam').disabled = true;
+        document.getElementById('btn-stop-cam').disabled = false;
+      } catch (err) {
+        showToast('Gagal mengakses kamera: ' + err, 'danger');
+      }
+    });
+
+    document.getElementById('btn-stop-cam').addEventListener('click', async () => {
+      if (html5QrCode) {
+        await html5QrCode.stop().catch(() => {});
+        document.getElementById('btn-start-cam').disabled = false;
+        document.getElementById('btn-stop-cam').disabled = true;
+      }
+    });
+
+    document.getElementById('scan-image-file').addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        html5QrCode = html5QrCode || new window.Html5Qrcode('qr-reader');
+        const decoded = await html5QrCode.scanFile(file, true);
+        handleDecoded(decoded);
+        showToast('QR dari gambar terbaca!', 'success');
+      } catch {
+        showToast('Tidak ditemukan QR Code pada gambar ini.', 'warning');
+      }
+    });
+
+    document.getElementById('scan-copy-btn').addEventListener('click', () => {
+      navigator.clipboard?.writeText(lastDecoded);
+      showToast('Teks hasil scan disalin!', 'success');
+    });
+
+    // UTM Builder
+    function updateUtm() {
+      const base = sanitizeUrl(document.getElementById('utm-url').value);
+      if (!base) {
+        document.getElementById('utm-result').value = '';
+        return;
+      }
+      const u = new URL(base);
+      const src = document.getElementById('utm-src').value.trim();
+      const med = document.getElementById('utm-med').value.trim();
+      const camp = document.getElementById('utm-camp').value.trim();
+      if (src) u.searchParams.set('utm_source', src);
+      if (med) u.searchParams.set('utm_medium', med);
+      if (camp) u.searchParams.set('utm_campaign', camp);
+      document.getElementById('utm-result').value = u.href;
+    }
+    ['utm-url', 'utm-src', 'utm-med', 'utm-camp'].forEach((id) => {
+      document.getElementById(id).addEventListener('input', updateUtm);
+    });
+
+    // Embed
+    function updateEmbed() {
+      const url = sanitizeUrl(document.getElementById('embed-url').value) || 'https://yourqrcode.pages.dev/generator.html';
+      document.getElementById('embed-code').value =
+        `<iframe src="${url}" width="100%" height="640" style="border:1px solid #e2e8f0;border-radius:12px;" loading="lazy" title="Your QR Code"></iframe>`;
+    }
+    document.getElementById('embed-url').addEventListener('input', updateEmbed);
+    updateEmbed();
+  </script>
+</body>
+</html>

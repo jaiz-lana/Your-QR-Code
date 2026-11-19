@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Halaman QR — Your QR Code</title>
+  <meta name="color-scheme" content="light">
+  <link rel="icon" type="image/svg+xml" href="./assets/img/icon.svg">
+  <link rel="stylesheet" href="./assets/css/tokens.css">
+  <link rel="stylesheet" href="./assets/css/app.css">
+</head>
+<body>
+  <main class="container section" style="max-width:680px;padding-top:2rem;">
+    <article id="hosted-card" class="card" style="padding:1.75rem;">
+      <div id="hosted-loading">Memuat halaman...</div>
+      <div id="hosted-content" hidden>
+        <span id="hosted-badge" class="badge badge-primary" style="margin-bottom:0.65rem;"></span>
+        <h1 id="hosted-title" style="margin:0 0 0.4rem;font-family:var(--font-display);font-size:1.65rem;"></h1>
+        <p id="hosted-desc" style="color:var(--text-secondary);margin:0 0 1.25rem;"></p>
+        <div id="hosted-body" style="display:grid;gap:0.75rem;"></div>
+      </div>
+    </article>
+
+    <div id="wa-cart-bar" class="card" style="display:none;position:sticky;bottom:1rem;margin-top:1rem;border-color:var(--brand-accent);box-shadow:var(--shadow-lg);">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+        <div>
+          <strong id="cart-summary">0 item</strong>
+          <div id="cart-total" style="font-size:0.9rem;color:var(--text-secondary);">Rp 0</div>
+        </div>
+        <button type="button" id="btn-send-wa-order" class="btn btn-accent">Pesan via WhatsApp</button>
+      </div>
+    </div>
+
+    <p style="text-align:center;font-size:0.82rem;color:var(--text-muted);margin-top:1.5rem;">
+      Dibuat gratis dengan <a href="./index.html">Your QR Code</a>
+    </p>
+  </main>
+
+  <script type="module">
+    import { getHostedPage } from './js/api.js';
+    import { escapeHtml, sanitizeUrl, showToast } from './assets/js/utils.js';
+
+    const params = new URLSearchParams(window.location.search);
+    let slug = params.get('s') || '';
+    if (!slug) {
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      const idx = parts.indexOf('p');
+      if (idx >= 0 && parts[idx + 1]) slug = parts[idx + 1];
+    }
+
+    const meja = params.get('meja') || '';
+    const cart = {};
+
+    async function render() {
+      const loadEl = document.getElementById('hosted-loading');
+      const contentEl = document.getElementById('hosted-content');
+
+      if (!slug) {
+        loadEl.textContent = 'Halaman tidak ditemukan (slug kosong).';
+        return;
+      }
+
+      const page = await getHostedPage(slug.toLowerCase());
+      if (!page) {
+        loadEl.textContent = 'Halaman tidak ditemukan atau telah dihapus.';
+        return;
+      }
+
+      loadEl.hidden = true;
+      contentEl.hidden = false;
+
+      const k = page.kontenJson || {};
+      const labels = {
+        'page-menu': 'Menu Digital',
+        'page-bio': 'Link-in-Bio',
+        'page-pdf': 'Dokumen / PDF',
+        'page-event': 'Undangan & Event',
+        'page-coupon': 'Kupon Promo',
+        'page-catalog': 'Katalog Produk'
+      };
+      document.getElementById('hosted-badge').textContent = labels[page.jenis] || 'Halaman QR';
+      document.getElementById('hosted-title').textContent = k.title || slug;
+      document.getElementById('hosted-desc').textContent = k.desc || '';
+
+      const bodyEl = document.getElementById('hosted-body');
+      const lines = String(k.itemsRaw || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+
+      if (page.jenis === 'page-pdf') {
+        const safe = sanitizeUrl(lines[0] || k.itemsRaw);
+        bodyEl.innerHTML = safe
+          ? `<a href="${safe}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Buka / Unduh Dokumen</a>`
+          : '<p>Tautan dokumen tidak tersedia.</p>';
+        return;
+      }
+
+      if (page.jenis === 'page-menu' || page.jenis === 'page-catalog') {
+        if (meja) {
+          bodyEl.innerHTML += `<div class="badge badge-success">Meja Nomor: ${escapeHtml(meja)}</div>`;
+        }
+        lines.forEach((line, idx) => {
+          const [name, priceRaw] = line.split('|').map((s) => s.trim());
+          const price = Number(String(priceRaw || '0').replace(/\D/g, '')) || 0;
+          const row = document.createElement('div');
+          row.className = 'card';
+          row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:0.75rem;padding:0.85rem;';
+          row.innerHTML = `
+            <div>
+              <strong>${escapeHtml(name)}</strong>
+              <div style="font-size:0.85rem;color:var(--text-secondary);">Rp ${price.toLocaleString('id-ID')}</div>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" data-add="${idx}">+ Tambah</button>
+          `;
+          row.querySelector('[data-add]').addEventListener('click', () => {
+            cart[name] = { qty: (cart[name]?.qty || 0) + 1, price };
+            updateCart(k.waPhone || '');
+          });
+          bodyEl.appendChild(row);
+        });
+        return;
+      }
+
+      if (page.jenis === 'page-coupon') {
+        bodyEl.innerHTML = `
+          <div class="card" style="text-align:center;background:var(--brand-accent-soft);border-color:var(--brand-accent);">
+            <div style="font-size:0.85rem;color:var(--text-secondary);">Kode Kupon Anda</div>
+            <strong style="font-size:1.5rem;letter-spacing:0.08em;">${escapeHtml(lines[0] || 'PROMO-GRATIS')}</strong>
+          </div>`;
+        return;
+      }
+
+      // Default Link-in-Bio / Event
+      lines.forEach((line) => {
+        const [label, urlRaw] = line.split('|').map((s) => s.trim());
+        const safe = sanitizeUrl(urlRaw);
+        if (safe) {
+          const a = document.createElement('a');
+          a.href = safe;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.className = 'btn btn-secondary';
+          a.style.justifyContent = 'space-between';
+          a.textContent = label || safe;
+          bodyEl.appendChild(a);
+        } else {
+          const p = document.createElement('div');
+          p.className = 'card';
+          p.textContent = line;
+          bodyEl.appendChild(p);
+        }
+      });
+    }
+
+    function updateCart(waPhone) {
+      const entries = Object.entries(cart);
+      const totalQty = entries.reduce((s, [, v]) => s + v.qty, 0);
+      const totalRp = entries.reduce((s, [, v]) => s + v.qty * v.price, 0);
+      document.getElementById('wa-cart-bar').style.display = totalQty > 0 ? 'block' : 'none';
+      document.getElementById('cart-summary').textContent = `${totalQty} item dipilih`;
+      document.getElementById('cart-total').textContent = `Total: Rp ${totalRp.toLocaleString('id-ID')}`;
+
+      document.getElementById('btn-send-wa-order').onclick = () => {
+        const itemsText = entries.map(([n, v]) => `- ${n} x${v.qty} (Rp ${(v.qty * v.price).toLocaleString('id-ID')})`).join('\n');
+        const msg = `Halo, saya ingin pesan${meja ? ` (Meja ${meja})` : ''}:\n${itemsText}\nTotal: Rp ${totalRp.toLocaleString('id-ID')}`;
+        const num = String(waPhone || '').replace(/\D/g, '');
+        if (!num) {
+          navigator.clipboard?.writeText(msg);
+          showToast('Pesanan disalin ke clipboard!', 'success');
+          return;
+        }
+        window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+      };
+    }
+
+    render();
+  </script>
+</body>
+</html>

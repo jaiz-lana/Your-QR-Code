@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modul Khusus — Your QR Code</title>
+  <meta name="color-scheme" content="light">
+  <link rel="icon" type="image/svg+xml" href="../assets/img/icon.svg">
+  <link rel="stylesheet" href="../assets/css/tokens.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+  <header id="app-navbar"></header>
+
+  <main class="container section" style="padding-top:2rem;">
+    <h1 class="section-title">Modul Khusus</h1>
+    <p class="section-subtitle">Setiap modul berdiri sendiri, siap pakai, dan dapat diaktifkan atau dinonaktifkan melalui <code>js/config.js</code>.</p>
+
+    <div id="modul-grid" class="grid-2"></div>
+  </main>
+
+  <footer id="app-footer"></footer>
+
+  <script type="module">
+    import { initShell } from '../assets/js/nav.js';
+    import { icon } from '../assets/js/icons.js';
+    import { APP_CONFIG } from '../js/config.js';
+
+    initShell({ active: 'modul', basePrefix: '..' });
+
+    const MODULES = [
+      {
+        key: 'pelajar',
+        href: './pelajar.html',
+        ic: 'graduationCap',
+        badge: 'Pelajar & Mahasiswa',
+        title: 'Presensi Kelas, Tugas & Kuis Mini',
+        desc: 'QR presensi dengan token berputar per menit, cegah absen ganda, pengumpulan tugas, dan kuis pilihan ganda.'
+      },
+      {
+        key: 'ormawa',
+        href: './ormawa.html',
+        badge: 'Organisasi Mahasiswa',
+        ic: 'users',
+        title: 'Form Builder, Tiket Event, Sertifikat & Polling',
+        desc: 'Pendaftaran panitia/peserta, tiket QR unik + check-in, sertifikat massal + verifikasi, serta voting 1 perangkat 1 suara.'
+      },
+      {
+        key: 'sekolah',
+        href: './sekolah.html',
+        badge: 'Sekolah / Madrasah',
+        ic: 'building',
+        title: 'Verifikasi Dokumen, Perpustakaan & Aset',
+        desc: 'Cek keabsahan surat/rapor/ijazah, peminjaman buku perpustakaan, dan kartu inventaris sarana sekolah.'
+      },
+      {
+        key: 'umkm',
+        href: './umkm.html',
+        badge: 'UMKM & Kuliner',
+        ic: 'store',
+        title: 'Menu WhatsApp, Loyalti & Label Produk',
+        desc: 'Menu digital per meja dengan keranjang WhatsApp, kartu stempel loyalti pelanggan, dan QR komposisi/halal/PIRT.'
+      }
+    ];
+
+    const grid = document.getElementById('modul-grid');
+    grid.innerHTML = MODULES.map((m) => {
+      const enabled = APP_CONFIG.modules[m.key] !== false;
+      return `
+        <article class="card ${enabled ? 'card-hover' : ''}" style="${enabled ? '' : 'opacity:0.6;'}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+            <span class="badge badge-primary">${icon(m.ic, 14)} ${m.badge}</span>
+            <span class="badge ${enabled ? 'badge-success' : 'badge-neutral'}">${enabled ? 'Aktif' : 'Nonaktif'}</span>
+          </div>
+          <h2 style="margin:0 0 0.5rem;font-size:1.2rem;">${m.title}</h2>
+          <p style="color:var(--text-secondary);margin:0 0 1rem;">${m.desc}</p>
+          ${enabled
+            ? `<a href="${m.href}" class="btn btn-primary">Buka Modul →</a>`
+            : `<span style="font-size:0.85rem;color:var(--text-muted);">Diaktifkan lewat <code>config.js → modules.${m.key}</code></span>`}
+        </article>
+      `;
+    }).join('');
+  </script>
+</body>
+</html>

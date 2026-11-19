@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modul Ormawa — Your QR Code</title>
+  <meta name="color-scheme" content="light">
+  <link rel="icon" type="image/svg+xml" href="../assets/img/icon.svg">
+  <link rel="stylesheet" href="../assets/css/tokens.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+  <header id="app-navbar"></header>
+
+  <main class="container section" style="padding-top:1.75rem;">
+    <div style="margin-bottom:1.25rem;">
+      <span class="badge badge-success">Modul Organisasi Mahasiswa</span>
+      <h1 style="margin:0.4rem 0 0;font-family:var(--font-display);">Tiket Event, Form Builder, Sertifikat & Polling</h1>
+    </div>
+
+    <div class="tabs">
+      <button type="button" class="tab-btn active" data-o-tab="tiket">Tiket Event & Check-in</button>
+      <button type="button" class="tab-btn" data-o-tab="form">Form Pendaftaran</button>
+      <button type="button" class="tab-btn" data-o-tab="sertifikat">Sertifikat + Verifikasi</button>
+      <button type="button" class="tab-btn" data-o-tab="polling">Polling / Voting</button>
+    </div>
+
+    <!-- TIKET EVENT -->
+    <section id="o-tiket" class="grid-2">
+      <div class="card">
+        <h2 style="margin-top:0;font-size:1.1rem;">Buat Tiket Peserta</h2>
+        <form id="form-ticket" class="form-grid">
+          <div class="field"><label for="tk-event">Nama Acara</label><input id="tk-event" class="input" value="Seminar Nasional BEM 2026" required></div>
+          <div class="field"><label for="tk-peserta">Nama Peserta</label><input id="tk-peserta" class="input" placeholder="Ayu Lestari" required></div>
+          <button type="submit" class="btn btn-primary">Generate Tiket QR</button>
+        </form>
+        <div id="tk-qr-box" style="margin-top:1rem;text-align:center;" hidden>
+          <div id="tk-qr-mount" style="display:inline-block;padding:0.75rem;background:#fff;border-radius:12px;border:1px solid var(--border-color);"></div>
+          <div id="tk-code-lbl" style="font-family:var(--font-mono);margin-top:0.5rem;font-weight:700;"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0;font-size:1.1rem;">Check-in Panitia</h2>
+        <div class="form-grid">
+          <div class="field"><label for="tk-checkin-code">Masukkan / Tempel Kode Tiket</label><input id="tk-checkin-code" class="input" placeholder="TKT-..."></div>
+          <button type="button" id="btn-tk-checkin" class="btn btn-accent">Verifikasi & Tandai Hadir</button>
+          <div id="tk-checkin-res" style="font-weight:600;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FORM PENDAFTARAN -->
+    <section id="o-form" class="grid-2" hidden>
+      <div class="card">
+        <h2 style="margin-top:0;font-size:1.1rem;">Form Pendaftaran Panitia / Anggota</h2>
+        <form id="form-ormawa-reg" class="form-grid">
+          <div class="field"><label for="reg-nama">Nama Lengkap</label><input id="reg-nama" class="input" required></div>
+          <div class="field"><label for="reg-nim">NIM / Jurusan</label><input id="reg-nim" class="input" required></div>
+          <div class="field"><label for="reg-divisi">Pilihan Divisi</label>
+            <select id="reg-divisi" class="select">
+              <option value="Acara">Divisi Acara</option>
+              <option value="Humas & Pubdok">Humas & Pubdok</option>
+              <option value="Perlengkapan">Perlengkapan</option>
+              <option value="Konsumsi">Konsumsi</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Kirim Pendaftaran</button>
+        </form>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+          <h2 style="margin:0;font-size:1.1rem;">Pendaftar Masuk (<span id="reg-count">0</span>)</h2>
+          <button type="button" id="btn-export-reg" class="btn btn-secondary btn-sm">Unduh CSV</button>
+        </div>
+        <ul id="reg-list" style="margin:0;padding-left:1.2rem;display:grid;gap:0.4rem;font-size:0.9rem;"></ul>
+      </div>
+    </section>
+
+    <!-- SERTIFIKAT DIGITAL -->
+    <section id="o-sertifikat" class="grid-2" hidden>
+      <div class="card">
+        <h2 style="margin-top:0;font-size:1.1rem;">Terbitkan Sertifikat + QR Sah</h2>
+        <form id="form-cert" class="form-grid">
+          <div class="field"><label for="cert-no">Nomor Sertifikat</label><input id="cert-no" class="input" value="001/BEM/XI/2026" required></div>
+          <div class="field"><label for="cert-nama">Nama Penerima</label><input id="cert-nama" class="input" required placeholder="Dimas Pratama"></div>
+          <div class="field"><label for="cert-acara">Nama Acara / Peran</label><input id="cert-acara" class="input" required value="Panitia PKKMB 2026"></div>
+          <button type="submit" class="btn btn-primary">Simpan & Buat QR Verifikasi</button>
+        </form>
+        <div id="cert-qr-out" style="margin-top:1rem;text-align:center;"></div>
+      </div>
+      <div class="card">
+        <h2 style="margin-top:0;font-size:1.1rem;">Cek Keaslian Sertifikat</h2>
+        <div style="display:flex;gap:0.5rem;">
+          <input id="cert-verify-id" class="input" placeholder="ID Sertifikat...">
+          <button type="button" id="btn-verify-cert" class="btn btn-secondary">Cek</button>
+        </div>
+        <div id="cert-verify-res" style="margin-top:1rem;"></div>
+      </div>
+    </section>
+
+    <!-- POLLING -->
+    <section id="o-polling" class="card" hidden style="max-width:600px;">
+      <h2 style="margin-top:0;font-size:1.1rem;">Polling Cepat Ormawa (1 Perangkat 1 Suara)</h2>
+      <p style="color:var(--text-secondary);">Pilih kandidat/opsi favorit Anda untuk rapat anggota:</p>
+      <div id="poll-options" style="display:grid;gap:0.6rem;">
+        <button type="button" class="btn btn-secondary" data-vote="Opsi A — Ketua 1">Vote: Opsi A — Ketua 1</button>
+        <button type="button" class="btn btn-secondary" data-vote="Opsi B — Ketua 2">Vote: Opsi B — Ketua 2</button>
+      </div>
+      <div id="poll-res" style="margin-top:1rem;font-size:0.9rem;"></div>
+    </section>
+  </main>
+
+  <footer id="app-footer"></footer>
+
+  <script type="module">
+    import { initShell } from '../assets/js/nav.js';
+    import { getModuleDoc, queryModuleDocs, saveModuleDoc } from '../js/api.js';
+    import { createQrInstance } from '../assets/js/qr-engine.js';
+    import { escapeHtml, generateShortCode, showToast } from '../assets/js/utils.js';
+
+    initShell({ active: 'modul', basePrefix: '..' });
+
+    document.querySelectorAll('[data-o-tab]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-o-tab]').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        ['tiket', 'form', 'sertifikat', 'polling'].forEach((t) => {
+          document.getElementById(`o-${t}`).hidden = t !== btn.dataset.oTab;
+        });
+      });
+    });
+
+    // Tiket
+    document.getElementById('form-ticket').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const token = `TKT-${generateShortCode(6).toUpperCase()}`;
+      await saveModuleDoc('tickets', token, {
+        eventId: document.getElementById('tk-event').value.trim(),
+        peserta: document.getElementById('tk-peserta').value.trim(),
+        statusHadir: false
+      });
+      document.getElementById('tk-qr-box').hidden = false;
+      const mount = document.getElementById('tk-qr-mount');
+      mount.innerHTML = '';
+      createQrInstance(token, { size: 180, dotColor: '#0067c0', bgColor: '#fff', dotType: 'rounded' }).append(mount);
+      document.getElementById('tk-code-lbl').textContent = token;
+      document.getElementById('tk-checkin-code').value = token;
+      showToast('Tiket dibuat!', 'success');
+    });
+
+    document.getElementById('btn-tk-checkin').addEventListener('click', async () => {
+      const code = document.getElementById('tk-checkin-code').value.trim().toUpperCase();
+      const resEl = document.getElementById('tk-checkin-res');
+      const ticket = await getModuleDoc('tickets', code);
+      if (!ticket) {
+        resEl.textContent = 'Tiket tidak ditemukan.';
+        resEl.style.color = 'var(--status-danger)';
+        return;
+      }
+      if (ticket.statusHadir) {
+        resEl.textContent = `${ticket.peserta} sudah check-in sebelumnya.`;
+        resEl.style.color = 'var(--status-warning)';
+        return;
+      }
+      await saveModuleDoc('tickets', code, { ...ticket, statusHadir: true });
+      resEl.textContent = `Sah! Selamat datang, ${ticket.peserta} (${ticket.eventId}).`;
+      resEl.style.color = 'var(--status-success)';
+    });
+
+    // Form Pendaftaran
+    let regRows = [];
+    async function loadRegs() {
+      regRows = await queryModuleDocs('formResponses', 'formId', 'ormawa_reg');
+      document.getElementById('reg-count').textContent = regRows.length;
+      document.getElementById('reg-list').innerHTML = regRows.length
+        ? regRows.map((r) => `<li><strong>${escapeHtml(r.nama)}</strong> (${escapeHtml(r.nim)}) — ${escapeHtml(r.divisi)}</li>`).join('')
+        : '<li style="color:var(--text-muted);">Belum ada pendaftar.</li>';
+    }
+    document.getElementById('form-ormawa-reg').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await saveModuleDoc('formResponses', null, {
+        formId: 'ormawa_reg',
+        nama: document.getElementById('reg-nama').value.trim(),
+        nim: document.getElementById('reg-nim').value.trim(),
+        divisi: document.getElementById('reg-divisi').value
+      });
+      e.target.reset();
+      await loadRegs();
+      showToast('Pendaftaran tersimpan!', 'success');
+    });
+    document.getElementById('btn-export-reg').addEventListener('click', () => {
+      const csv = 'nama,nim,divisi\n' + regRows.map((r) => `"${r.nama}","${r.nim}","${r.divisi}"`).join('\n');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+      a.download = 'pendaftar-ormawa.csv';
+      a.click();
+    });
+    loadRegs();
+
+    // Sertifikat
+    document.getElementById('form-cert').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = generateShortCode(8);
+      await saveModuleDoc('certificates', id, {
+        nomor: document.getElementById('cert-no').value.trim(),
+        nama: document.getElementById('cert-nama').value.trim(),
+        acara: document.getElementById('cert-acara').value.trim()
+      });
+      document.getElementById('cert-verify-id').value = id;
+      const out = document.getElementById('cert-qr-out');
+      out.innerHTML = `<div style="display:inline-block;padding:0.5rem;background:#fff;border-radius:8px;border:1px solid var(--border-color);" id="cert-qr-m"></div><div style="font-size:0.82rem;margin-top:0.35rem;">ID Verifikasi: <strong>${id}</strong></div>`;
+      createQrInstance(id, { size: 140, dotColor: '#0067c0', bgColor: '#fff', dotType: 'rounded' }).append(document.getElementById('cert-qr-m'));
+      showToast(`Sertifikat tersimpan dengan ID: ${id}`, 'success');
+    });
+
+    document.getElementById('btn-verify-cert').addEventListener('click', async () => {
+      const id = document.getElementById('cert-verify-id').value.trim();
+      const doc = await getModuleDoc('certificates', id);
+      const res = document.getElementById('cert-verify-res');
+      res.innerHTML = doc
+        ? `<div class="badge badge-success">SERTIFIKAT SAH</div><p><strong>${escapeHtml(doc.nama)}</strong> — ${escapeHtml(doc.acara)}<br>Nomor: ${escapeHtml(doc.nomor)}</p>`
+        : `<div class="badge badge-danger">Sertifikat tidak terdaftar</div>`;
+    });
+
+    // Polling
+    async function renderPollTally() {
+      const votes = await queryModuleDocs('pollVotes', 'pollId', 'demo-ormawa');
+      const countA = votes.filter((v) => v.pilihan.includes('Opsi A')).length;
+      const countB = votes.filter((v) => v.pilihan.includes('Opsi B')).length;
+      document.getElementById('poll-res').innerHTML = `<strong>Perolehan Sementara:</strong> Opsi A (${countA} suara) • Opsi B (${countB} suara)`;
+    }
+    document.querySelectorAll('[data-vote]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (localStorage.getItem('ormawa_voted_demo')) {
+          showToast('Perangkat ini sudah memberikan suara.', 'warning');
+          return;
+        }
+        await saveModuleDoc('pollVotes', null, { pollId: 'demo-ormawa', pilihan: btn.dataset.vote });
+        localStorage.setItem('ormawa_voted_demo', btn.dataset.vote);
+        await renderPollTally();
+        showToast('Terima kasih sudah memilih!', 'success');
+      });
+    });
+    renderPollTally();
+  </script>
+</body>
+</html>

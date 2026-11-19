@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tentang, Privasi & Syarat — Your QR Code</title>
+  <meta name="color-scheme" content="light">
+  <link rel="icon" type="image/svg+xml" href="./assets/img/icon.svg">
+  <link rel="stylesheet" href="./assets/css/tokens.css">
+  <link rel="stylesheet" href="./assets/css/app.css">
+</head>
+<body>
+  <header id="app-navbar"></header>
+  <main class="container section" style="max-width:860px;">
+    <h1 class="section-title">Tentang Your QR Code</h1>
+    <p class="section-subtitle">Platform QR Code open source berlisensi MIT yang dibuat agar pelajar, ormawa, sekolah/madrasah, dan UMKM dapat memanfaatkan QR statis, QR dinamis, dan analitik secara gratis tanpa paywall.</p>
+
+    <div class="grid-2" style="margin-bottom:2rem;">
+      <section class="card">
+        <h2 style="margin-top:0;">Kebijakan Privasi</h2>
+        <ul style="padding-left:1.25rem;color:var(--text-secondary);">
+          <li><strong>Mode Statis 100% Lokal:</strong> Data QR statis diproses sepenuhnya di browser Anda dan tidak dikirim ke server mana pun.</li>
+          <li><strong>Tanpa IP Mentah:</strong> Saat mencatat analitik QR Dinamis, sistem hanya menyimpan waktu, OS, kategori perangkat, browser, bahasa, referrer domain, dan hash harian anonim.</li>
+          <li><strong>Tanpa Iklan & Pelacak Pihak Ketiga:</strong> Tidak ada piksel iklan atau penjualan data pengguna.</li>
+        </ul>
+      </section>
+      <section class="card">
+        <h2 style="margin-top:0;">Syarat Penggunaan & Keamanan</h2>
+        <ul style="padding-left:1.25rem;color:var(--text-secondary);">
+          <li>Dilarang menggunakan QR Dinamis untuk phishing, malware, penipuan, atau tautan berbahaya.</li>
+          <li>Proyek ini berlisensi MIT dan disediakan apa adanya tanpa garansi.</li>
+          <li><strong>Catatan Keamanan Kata Sandi (Mode Pages):</strong> Pada mode GitHub Pages/Spark tanpa Cloud Functions, verifikasi kata sandi QR dilakukan di sisi klien. Untuk data sangat sensitif, gunakan mode Cloud Functions (Blaze).</li>
+        </ul>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2 style="margin-top:0;">Panduan Singkat Memulai (Onboarding)</h2>
+      <ol style="padding-left:1.25rem;color:var(--text-secondary);display:grid;gap:0.5rem;">
+        <li>Buka halaman <a href="./generator.html">Buat QR</a> untuk membuat QR Statis langsung tanpa login.</li>
+        <li>Aktifkan sakelar <strong>QR Dinamis</strong> jika ingin tautan bisa diedit kapan saja dan jumlah scan terpantau.</li>
+        <li>Kelola semua QR Anda di halaman <a href="./dashboard.html">QR Saya</a> (folder, jadwal aktif, batas scan, dan grafik analitik).</li>
+        <li>Jelajahi <a href="./modul/index.html">Modul Khusus</a> untuk kebutuhan Presensi Kelas, Tiket Event, Verifikasi Dokumen, atau Menu WhatsApp UMKM.</li>
+      </ol>
+    </section>
+  </main>
+  <footer id="app-footer"></footer>
+  <script type="module">
+    import { initShell } from './assets/js/nav.js';
+    initShell({ active: 'about', basePrefix: '.' });
+  </script>
+</body>
+</html>

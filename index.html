@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your QR Code — Membuat Kode QR dengan Cepat, Gratis & Dinamis</title>
+  <meta name="description" content="Generator QR Code gratis selamanya (statis & dinamis), analitik scan, halaman hosting, dan modul khusus.">
+  <meta property="og:title" content="Your QR Code — Generator QR Gratis & Open Source">
+  <meta property="og:description" content="Semua fitur QR Dinamis, Analitik, Kustomisasi Logo/Gradasi, dan Modul 100% gratis tanpa paywall.">
+  <meta property="og:type" content="website">
+  <meta name="color-scheme" content="light">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="./assets/img/icon.svg">
+  <link rel="stylesheet" href="./assets/css/tokens.css">
+  <link rel="stylesheet" href="./assets/css/app.css">
+</head>
+<body>
+  <header id="app-navbar"></header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="section" style="padding-top:3.25rem;padding-bottom:3rem;">
+      <div class="container" style="display:grid;gap:2rem;align-items:center;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));">
+        <div>
+          <span class="badge badge-primary" data-i18n="hero.badge">100% Gratis • Open Source MIT • Tanpa Iklan</span>
+          <h1 style="font-family:var(--font-display);font-size:clamp(2rem,4.2vw,3.1rem);line-height:1.15;margin:1rem 0;" data-i18n="hero.title">
+            Membuat kode QR dengan cepat, cantik, dan dinamis
+          </h1>
+          <p style="color:var(--text-secondary);font-size:1.08rem;margin:0 0 1.75rem;" data-i18n="hero.subtitle">
+            Generator QR Code lengkap dengan analitik scan, halaman hosting, dan modul khusus. Semua fitur premium gratis selamanya tanpa perlu kartu kredit.
+          </p>
+          <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
+            <a href="./generator.html" class="btn btn-primary btn-lg" data-i18n="hero.ctaPrimary">Buat Kode QR Sekarang</a>
+            <button type="button" id="hero-auth-btn" class="btn btn-secondary btn-lg">Masuk / Daftar Akun</button>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:1.5rem;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border-color);">
+            <div>
+              <strong style="font-size:1.5rem;font-family:var(--font-display);color:var(--brand-primary);">12.480+</strong>
+              <div style="font-size:0.82rem;color:var(--text-muted);">Total Scan Tercatat</div>
+            </div>
+            <div>
+              <strong style="font-size:1.5rem;font-family:var(--font-display);color:var(--brand-accent);">25+</strong>
+              <div style="font-size:0.82rem;color:var(--text-muted);">Tipe Konten & Modul</div>
+            </div>
+            <div>
+              <strong style="font-size:1.5rem;font-family:var(--font-display);">Rp 0</strong>
+              <div style="font-size:0.82rem;color:var(--text-muted);">Tanpa Paywall</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:1.75rem;text-align:center;">
+          <div style="display:inline-flex;padding:1rem;border-radius:var(--radius-lg);background:#fff;box-shadow:var(--shadow-md);margin-bottom:1rem;">
+            <svg width="180" height="180" viewBox="0 0 100 100" aria-label="Ilustrasi QR Code">
+              <defs>
+                <linearGradient id="heroQrGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#0078d4"/>
+                  <stop offset="100%" stop-color="#004e8c"/>
+                </linearGradient>
+              </defs>
+              <rect width="100" height="100" fill="#ffffff"/>
+              <rect x="8" y="8" width="24" height="24" rx="5" fill="none" stroke="url(#heroQrGrad)" stroke-width="5"/>
+              <rect x="15" y="15" width="10" height="10" rx="2" fill="#0ea5e9"/>
+              <rect x="68" y="8" width="24" height="24" rx="5" fill="none" stroke="url(#heroQrGrad)" stroke-width="5"/>
+              <rect x="75" y="15" width="10" height="10" rx="2" fill="#0ea5e9"/>
+              <rect x="8" y="68" width="24" height="24" rx="5" fill="none" stroke="url(#heroQrGrad)" stroke-width="5"/>
+              <rect x="15" y="75" width="10" height="10" rx="2" fill="#0ea5e9"/>
+              <g fill="#0f172a">
+                <rect x="40" y="10" width="6" height="6" rx="1.5"/>
+                <rect x="52" y="10" width="6" height="6" rx="1.5"/>
+                <rect x="40" y="22" width="12" height="6" rx="1.5"/>
+                <rect x="10" y="42" width="6" height="12" rx="1.5"/>
+                <rect x="22" y="42" width="12" height="6" rx="1.5"/>
+                <rect x="42" y="42" width="16" height="16" rx="4" fill="url(#heroQrGrad)"/>
+                <rect x="66" y="42" width="6" height="12" rx="1.5"/>
+                <rect x="78" y="48" width="12" height="6" rx="1.5"/>
+                <rect x="42" y="66" width="6" height="12" rx="1.5"/>
+                <rect x="54" y="66" width="12" height="6" rx="1.5"/>
+                <rect x="66" y="72" width="12" height="12" rx="2"/>
+                <rect x="82" y="66" width="8" height="18" rx="2"/>
+              </g>
+            </svg>
+          </div>
+          <div style="font-weight:700;font-size:1.05rem;">Pindai, Edit Kapan Saja, Pantau Hasilnya</div>
+          <p style="color:var(--text-secondary);font-size:0.9rem;margin:0.4rem 0 1rem;">
+            Dilengkapi pengecek keterbacaan otomatis (skor 0–100) agar QR selalu terbaca di kamera HP apa pun.
+          </p>
+          <a href="./generator.html" class="btn btn-accent" style="width:100%;">Mulai Buat QR Gratis</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 Nilai Jual -->
+    <section class="section" style="background:rgba(255,255,255,0.72);border-block:1px solid var(--border-color);">
+      <div class="container">
+        <h2 class="section-title">Mengapa Memilih Your QR Code?</h2>
+        <p class="section-subtitle">Semua fitur yang biasanya berbayar di platform lain, kami buka 100% gratis dan ramah kuota.</p>
+        <div class="grid-3" id="value-props-grid"></div>
+      </div>
+    </section>
+
+    <!-- Cara Membuat (3 Langkah) -->
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title">Cara Membuat Kode QR</h2>
+        <div class="grid-3">
+          <div class="card">
+            <div class="step-num" style="background:var(--brand-gradient);color:#fff;margin-bottom:0.75rem;">1</div>
+            <h3 style="margin:0 0 0.4rem;">Pilih Tipe Konten</h3>
+            <p style="margin:0;color:var(--text-secondary);">Tautan URL, WiFi, WhatsApp, vCard, PDF, Menu Digital, hingga Presensi Kelas dan Tiket Event.</p>
+          </div>
+          <div class="card">
+            <div class="step-num" style="background:var(--brand-gradient);color:#fff;margin-bottom:0.75rem;">2</div>
+            <h3 style="margin:0 0 0.4rem;">Kustomisasi Desain</h3>
+            <p style="margin:0;color:var(--text-secondary);">Atur pola titik, warna gradasi, bingkai CTA "Scan Saya", serta logo tengah dengan pratinjau langsung.</p>
+          </div>
+          <div class="card">
+            <div class="step-num" style="background:var(--brand-gradient);color:#fff;margin-bottom:0.75rem;">3</div>
+            <h3 style="margin:0 0 0.4rem;">Unduh & Bagikan</h3>
+            <p style="margin:0;color:var(--text-secondary);">Ekspor resolusi tinggi hingga 4096px, SVG vektor, PDF A4, atau cetak massal dari CSV dalam satu ZIP.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section">
+      <div class="container" style="max-width:820px;">
+        <h2 class="section-title" style="text-align:center;">Pertanyaan yang Sering Diajukan</h2>
+        <div style="display:grid;gap:0.75rem;margin-top:1.5rem;">
+          <details class="faq-item" open>
+            <summary>Apakah benar-benar gratis tanpa batas scan?</summary>
+            <p style="margin:0;color:var(--text-secondary);">Ya! Your QR Code adalah proyek open-source berlisensi MIT. QR Statis berjalan 100% di browser tanpa server atau login.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Apa bedanya QR Statis dan QR Dinamis?</summary>
+            <p style="margin:0;color:var(--text-secondary);">QR Statis menyimpan data langsung di pola QR tanpa perlu login. QR Dinamis mengarah ke tautan pendek sehingga tujuan bisa diubah kapan saja dan jumlah scan bisa dipantau di "QR Saya".</p>
+          </details>
+          <details class="faq-item">
+            <summary>Bisakah di-host sendiri di GitHub Pages atau Firebase?</summary>
+            <p style="margin:0;color:var(--text-secondary);">Bisa! Cukup ubah <code>deployMode</code> di <code>js/config.js</code> menjadi <code>"pages"</code> untuk GitHub Pages atau <code>"firebase"</code> untuk Firebase Hosting.</p>
+          </details>
+        </div>
+
+        <div class="card" style="margin-top:2.5rem;text-align:center;padding:2rem;background:var(--brand-primary-soft);border-color:var(--brand-primary);">
+          <h2 style="margin:0 0 0.5rem;font-family:var(--font-display);">Siap Membuat QR Code Pertama Anda?</h2>
+          <p style="margin:0 0 1.25rem;color:var(--text-secondary);">Tanpa daftar untuk QR Statis, langsung jadi dalam hitungan detik.</p>
+          <a href="./generator.html" class="btn btn-primary btn-lg">Buat Kode QR Sekarang</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="app-footer"></footer>
+
+  <script type="module">
+    import { initShell, openAuthModal } from './assets/js/nav.js';
+    import { onAuthChanged } from './js/api.js';
+    import { icon } from './assets/js/icons.js';
+
+    initShell({ active: 'home', basePrefix: '.' });
+
+    document.getElementById('value-props-grid').innerHTML = `
+      <article class="card card-hover">
+        <div class="badge badge-primary" style="margin-bottom:0.75rem;">${icon('zap', 14)} Mudah & Cepat</div>
+        <h3 style="margin:0 0 0.5rem;">3 Langkah Selesai</h3>
+        <p style="margin:0;color:var(--text-secondary);">Pilih tipe konten, atur warna/logo/bingkai, lalu unduh PNG, SVG, JPG, WEBP, atau PDF siap cetak.</p>
+      </article>
+      <article class="card card-hover">
+        <div class="badge badge-success" style="margin-bottom:0.75rem;">${icon('barChart', 14)} Lacak & Analisis</div>
+        <h3 style="margin:0 0 0.5rem;">QR Dinamis & Analitik</h3>
+        <p style="margin:0;color:var(--text-secondary);">Ubah tujuan kapan saja tanpa cetak ulang. Pantau jumlah scan harian dan perangkat tanpa pelacakan iklan.</p>
+      </article>
+      <article class="card card-hover">
+        <div class="badge badge-warning" style="margin-bottom:0.75rem;">${icon('palette', 14)} Desain Bebas</div>
+        <h3 style="margin:0 0 0.5rem;">Logo, Gradasi & Cek Skor</h3>
+        <p style="margin:0;color:var(--text-secondary);">Tambahkan logo Anda sendiri. Pengecek keterbacaan otomatis memastikan QR tidak gagal dipindai.</p>
+      </article>
+    `;
+
+    const heroAuthBtn = document.getElementById('hero-auth-btn');
+    onAuthChanged((user) => {
+      if (user) {
+        heroAuthBtn.textContent = 'Buka QR Saya';
+        heroAuthBtn.onclick = () => { window.location.href = './dashboard.html'; };
+      } else {
+        heroAuthBtn.textContent = 'Masuk / Daftar Akun';
+        heroAuthBtn.onclick = () => openAuthModal('login');
+      }
+    });
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>

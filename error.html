@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Informasi Eror — Your QR Code</title>
+  <meta name="robots" content="noindex">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" type="image/svg+xml" href="./assets/img/icon.svg">
+  <link rel="stylesheet" href="./assets/css/tokens.css">
+  <link rel="stylesheet" href="./assets/css/app.css">
+  <style>
+    .err-wrap {
+      min-height: calc(100dvh - 150px);
+      display: grid;
+      place-items: center;
+      padding: 2rem 1rem;
+    }
+    .err-card {
+      max-width: 560px;
+      width: 100%;
+      text-align: center;
+      padding: 2.5rem 1.75rem;
+      background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+    }
+    .err-code {
+      font-family: var(--font-display);
+      font-size: clamp(3.75rem, 11vw, 5.5rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      background: linear-gradient(135deg, #0078d4 0%, #0067c0 55%, #0ea5e9 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0.5rem 0;
+    }
+    .err-art {
+      width: 84px;
+      height: 84px;
+      margin: 0 auto 0.75rem;
+      animation: floatQr 3.2s ease-in-out infinite;
+    }
+    @keyframes floatQr {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+  </style>
+</head>
+<body>
+  <header id="app-navbar"></header>
+
+  <main class="err-wrap">
+    <section class="err-card">
+      <div class="err-art" id="err-icon-box" aria-hidden="true"></div>
+      <span class="badge badge-primary" id="err-badge">Kode Eror 404</span>
+      <h1 class="err-code" id="err-code">404</h1>
+      <h2 id="err-title" style="margin:0 0 0.5rem;font-family:var(--font-display);font-size:1.3rem;">Halaman Tidak Ditemukan</h2>
+      <p id="err-desc" style="color:var(--text-secondary);margin:0 0 1.5rem;font-size:0.95rem;"></p>
+
+      <div style="display:flex;gap:0.65rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem;">
+        <a href="./index.html" class="btn btn-primary">Kembali ke Beranda</a>
+        <a href="./generator.html" class="btn btn-secondary">Buat QR Baru</a>
+        <button type="button" onclick="window.location.reload()" class="btn btn-ghost">Muat Ulang</button>
+      </div>
+
+      <div style="padding-top:1rem;border-top:1px solid var(--border-color);font-size:0.8rem;color:var(--text-muted);">
+        <span>Pratinjau Kode Eror:</span>
+        <div style="display:flex;gap:0.35rem;justify-content:center;flex-wrap:wrap;margin-top:0.45rem;">
+          <a href="?code=400" class="btn btn-ghost btn-sm">400</a>
+          <a href="?code=401" class="btn btn-ghost btn-sm">401</a>
+          <a href="?code=403" class="btn btn-ghost btn-sm">403</a>
+          <a href="?code=404" class="btn btn-ghost btn-sm">404</a>
+          <a href="?code=410" class="btn btn-ghost btn-sm">410</a>
+          <a href="?code=500" class="btn btn-ghost btn-sm">500</a>
+          <a href="?code=503" class="btn btn-ghost btn-sm">503</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="app-footer"></footer>
+
+  <script type="module">
+    import { initShell } from './assets/js/nav.js';
+    initShell({ active: 'home', basePrefix: '.' });
+
+    const CATALOG = {
+      '400': {
+        badge: 'Permintaan Tidak Valid',
+        title: 'Format Permintaan Tidak Dikenali',
+        desc: 'Parameter atau tautan QR yang dikirim tidak valid. Periksa kembali URL Anda.'
+      },
+      '401': {
+        badge: 'Autentikasi Diperlukan',
+        title: 'Silakan Masuk Terlebih Dahulu',
+        desc: 'Anda perlu masuk atau mendaftar akun untuk mengakses halaman dan data QR ini.'
+      },
+      '403': {
+        badge: 'Akses Ditolak',
+        title: 'Anda Tidak Memiliki Izin',
+        desc: 'Halaman atau QR ini bersifat privat atau dibatasi oleh pemilik workspace.'
+      },
+      '404': {
+        badge: 'Tidak Ditemukan',
+        title: 'Jalur yang Diminta Tidak Ditemukan',
+        desc: 'Halaman atau kode QR yang Anda cari mungkin sudah dihapus, salah ketik, atau belum dibuat.'
+      },
+      '410': {
+        badge: 'QR Dijeda / Kedaluwarsa',
+        title: 'Tautan QR Sudah Tidak Aktif',
+        desc: 'Pemilik QR menjeda tautan ini, atau batas waktu serta kuota scan telah tercapai.'
+      },
+      '500': {
+        badge: 'Gangguan Sistem',
+        title: 'Terjadi Kesalahan di Server',
+        desc: 'Layanan sedang mengalami kendala sementara. Silakan muat ulang beberapa saat lagi.'
+      },
+      '503': {
+        badge: 'Layanan Sibuk',
+        title: 'Layanan Sedang Dalam Pemeliharaan',
+        desc: 'Server sedang sibuk atau kuota harian sementara penuh. Silakan coba kembali nanti.'
+      }
+    };
+
+    const code = new URLSearchParams(window.location.search).get('code') || '404';
+    const info = CATALOG[code] || CATALOG['404'];
+    document.getElementById('err-code').textContent = code;
+    document.getElementById('err-badge').textContent = `Kode Eror ${code} • ${info.badge}`;
+    document.getElementById('err-title').textContent = info.title;
+    document.getElementById('err-desc').textContent = info.desc;
+
+    const accentColor = ['500', '503', '403'].includes(code) ? '#c42b1c' : '#9d5d00';
+    document.getElementById('err-icon-box').innerHTML = `
+      <svg viewBox="0 0 128 128" width="84" height="84">
+        <defs>
+          <linearGradient id="errDynGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0078d4"/><stop offset="100%" stop-color="#0ea5e9"/>
+          </linearGradient>
+        </defs>
+        <rect x="14" y="14" width="38" height="38" rx="8" fill="none" stroke="url(#errDynGrad)" stroke-width="9"/>
+        <rect x="27" y="27" width="12" height="12" rx="3" fill="url(#errDynGrad)"/>
+        <rect x="76" y="14" width="38" height="38" rx="8" fill="none" stroke="url(#errDynGrad)" stroke-width="9"/>
+        <rect x="89" y="27" width="12" height="12" rx="3" fill="url(#errDynGrad)"/>
+        <rect x="14" y="76" width="38" height="38" rx="8" fill="none" stroke="url(#errDynGrad)" stroke-width="9"/>
+        <rect x="27" y="89" width="12" height="12" rx="3" fill="url(#errDynGrad)"/>
+        <circle cx="95" cy="95" r="20" fill="${accentColor}"/>
+        <path d="M95 85 v11 M95 103 v2" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+      </svg>`;
+  </script>
+</body>
+</html>

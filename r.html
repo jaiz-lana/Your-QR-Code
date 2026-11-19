@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mengalihkan... — Your QR Code</title>
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="color-scheme" content="light">
+  <link rel="stylesheet" href="./assets/css/tokens.css">
+  <link rel="stylesheet" href="./assets/css/app.css">
+</head>
+<body style="display:grid;place-items:center;min-height:100dvh;padding:1.25rem;">
+  <main class="card" style="max-width:480px;width:100%;text-align:center;padding:2.25rem 1.75rem;background:linear-gradient(180deg,#ffffff 0%,#f5f9ff 100%);">
+    <div id="redirect-err-code" style="display:none;font-family:var(--font-display);font-size:3.5rem;font-weight:800;line-height:1;background:linear-gradient(135deg,#0078d4,#0ea5e9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.4rem;">404</div>
+    <span id="redirect-err-badge" class="badge badge-primary" style="display:none;margin-bottom:0.75rem;"></span>
+    <div id="redirect-status" style="font-weight:700;font-size:1.18rem;margin-bottom:0.5rem;">Memproses tautan QR...</div>
+    <p id="redirect-msg" style="color:var(--text-secondary);margin:0 0 1.25rem;">Mohon tunggu sebentar, Anda akan segera dialihkan.</p>
+
+    <form id="pw-form" style="display:none;gap:0.75rem;text-align:left;margin-bottom:1rem;">
+      <div class="field">
+        <label for="qr-pw-input">QR ini dilindungi kata sandi</label>
+        <input type="password" id="qr-pw-input" class="input" required placeholder="Masukkan kata sandi...">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">Buka Tautan</button>
+    </form>
+
+    <div id="fallback-actions" style="display:none;gap:0.65rem;justify-content:center;flex-wrap:wrap;">
+      <a id="btn-continue" href="#" class="btn btn-primary" rel="noopener noreferrer">Lanjutkan ke Tujuan</a>
+      <a href="./index.html" class="btn btn-secondary">Beranda</a>
+    </div>
+  </main>
+
+  <script type="module">
+    import { resolveLink, recordScan } from './js/api.js';
+    import { getDeviceMeta, isSuspiciousUrl, sanitizeUrl, sha256Hex } from './assets/js/utils.js';
+
+    const statusEl = document.getElementById('redirect-status');
+    const msgEl = document.getElementById('redirect-msg');
+    const pwForm = document.getElementById('pw-form');
+    const fallbackEl = document.getElementById('fallback-actions');
+    const continueBtn = document.getElementById('btn-continue');
+
+    function extractCode() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('c')) return params.get('c').trim().toLowerCase();
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      const rIdx = parts.indexOf('r');
+      if (rIdx >= 0 && parts[rIdx + 1]) return parts[rIdx + 1].trim().toLowerCase();
+      return '';
+    }
+
+    function pickTarget(link, meta) {
+      const aturan = link.aturan || {};
+      if (meta.os === 'iOS' && aturan.ios) return aturan.ios;
+      if (meta.os === 'Android' && aturan.android) return aturan.android;
+      if (aturan.ab && Math.random() < 0.5) return aturan.ab;
+      return link.tujuan;
+    }
+
+    function showPaused(message, errCode = '410', badgeText = 'Tautan Tidak Aktif') {
+      const codeEl = document.getElementById('redirect-err-code');
+      const badgeEl = document.getElementById('redirect-err-badge');
+      codeEl.style.display = 'block';
+      codeEl.textContent = errCode;
+      badgeEl.style.display = 'inline-flex';
+      badgeEl.textContent = `Kode Eror ${errCode} • ${badgeText}`;
+      statusEl.textContent = badgeText;
+      msgEl.textContent = message || 'QR Code ini sedang dijeda, kedaluwarsa, atau belum dimulai.';
+      fallbackEl.style.display = 'flex';
+      continueBtn.style.display = 'none';
+    }
+
+    async function proceed(kode, link, meta) {
+      const target = sanitizeUrl(pickTarget(link, meta));
+      if (!target) {
+        showPaused('Tautan tujuan tidak valid atau diblokir demi keamanan.');
+        return;
+      }
+
+      // Catat scan tanpa memblokir terlalu lama (maks 600ms timeout)
+      await Promise.race([
+        recordScan(kode, meta).catch(() => {}),
+        new Promise((res) => setTimeout(res, 600))
+      ]);
+
+      continueBtn.href = target;
+      fallbackEl.style.display = 'flex';
+
+      if (isSuspiciousUrl(target)) {
+        statusEl.textContent = 'Peringatan Keamanan Tautan';
+        msgEl.textContent = `Tujuan (${target}) menggunakan IP mentah atau domain tidak biasa. Pastikan Anda mempercayai sumber QR ini sebelum melanjutkan.`;
+        return;
+      }
+
+      window.location.replace(target);
+    }
+
+    async function init() {
+      const kode = extractCode();
+      if (!kode) {
+        showPaused('Kode QR tidak ditemukan pada URL.', '400', 'Permintaan Tidak Valid');
+        return;
+      }
+
+      const link = await resolveLink(kode);
+      if (!link) {
+        showPaused('Kode QR tidak terdaftar atau telah dihapus.', '404', 'QR Tidak Ditemukan');
+        return;
+      }
+
+      if (link.status && link.status !== 'active') {
+        showPaused(link.pesanDijeda);
+        return;
+      }
+
+      const now = Date.now();
+      if (link.mulai && new Date(link.mulai).getTime() > now) {
+        showPaused('QR Code ini belum memasuki jadwal aktif.');
+        return;
+      }
+      if (link.berakhir && new Date(link.berakhir).getTime() < now) {
+        showPaused(link.pesanDijeda || 'Masa berlaku QR Code ini telah berakhir.');
+        return;
+      }
+
+      const meta = getDeviceMeta();
+
+      if (link.passwordHash) {
+        statusEl.textContent = 'Verifikasi Diperlukan';
+        msgEl.textContent = 'Masukkan kata sandi untuk membuka tujuan QR ini.';
+        pwForm.style.display = 'grid';
+        pwForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const val = document.getElementById('qr-pw-input').value;
+          const hashed = await sha256Hex(val);
+          if (hashed === link.passwordHash) {
+            pwForm.style.display = 'none';
+            await proceed(kode, link, meta);
+          } else {
+            msgEl.textContent = 'Kata sandi salah. Silakan coba lagi.';
+            msgEl.style.color = 'var(--status-danger)';
+          }
+        });
+        return;
+      }
+
+      await proceed(kode, link, meta);
+    }
+
+    init();
+  </script>
+</body>
+</html>

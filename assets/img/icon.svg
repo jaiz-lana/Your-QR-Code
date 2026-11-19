@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="winBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0078d4"/>
+      <stop offset="55%" stop-color="#0067c0"/>
+      <stop offset="100%" stop-color="#004e8c"/>
+    </linearGradient>
+  </defs>
+  <rect x="14" y="14" width="38" height="38" rx="8" fill="none" stroke="url(#winBlue)" stroke-width="10"/>
+  <rect x="27" y="27" width="12" height="12" rx="3" fill="url(#winBlue)"/>
+  <rect x="76" y="14" width="38" height="38" rx="8" fill="none" stroke="url(#winBlue)" stroke-width="10"/>
+  <rect x="89" y="27" width="12" height="12" rx="3" fill="url(#winBlue)"/>
+  <rect x="14" y="76" width="38" height="38" rx="8" fill="none" stroke="url(#winBlue)" stroke-width="10"/>
+  <rect x="27" y="89" width="12" height="12" rx="3" fill="url(#winBlue)"/>
+  <rect x="76" y="76" width="16" height="16" rx="4" fill="url(#winBlue)"/>
+  <rect x="98" y="98" width="16" height="16" rx="4" fill="url(#winBlue)"/>
+  <rect x="76" y="100" width="14" height="12" rx="3" fill="url(#winBlue)"/>
+  <rect x="100" y="76" width="12" height="14" rx="3" fill="url(#winBlue)"/>
+</svg>

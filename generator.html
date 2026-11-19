@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generator QR Code — Your QR Code</title>
+  <meta name="description" content="Buat QR Code statis dan dinamis gratis dengan kustomisasi logo, gradasi, bingkai, pengecek keterbacaan, dan ekspor PNG/SVG/PDF/ZIP.">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" type="image/svg+xml" href="./assets/img/icon.svg">
+  <link rel="stylesheet" href="./assets/css/tokens.css">
+  <link rel="stylesheet" href="./assets/css/app.css">
+</head>
+<body>
+  <header id="app-navbar"></header>
+
+  <main class="container section" style="padding-top:1.75rem;">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1.25rem;" class="no-print">
+      <div>
+        <h1 style="margin:0;font-family:var(--font-display);font-size:1.65rem;">Generator QR Code</h1>
+        <p style="margin:0.2rem 0 0;color:var(--text-secondary);font-size:0.92rem;">Semua fitur gratis: QR Statis offline, QR Dinamis, Halaman Hosting, & Bulk CSV.</p>
+      </div>
+      <div class="tabs" style="margin-bottom:0;border-bottom:none;padding-bottom:0;">
+        <button type="button" class="tab-btn active" data-gen-mode="single">Buat Satuan</button>
+        <button type="button" class="tab-btn" data-gen-mode="bulk">Bulk CSV → ZIP</button>
+        <button type="button" class="tab-btn" data-gen-mode="print">Template Cetak</button>
+      </div>
+    </div>
+
+    <!-- MODE SATUAN -->
+    <div id="panel-single" class="generator-layout">
+      <!-- KOLOM KIRI: STEPPER & FORM -->
+      <section class="card no-print">
+        <div class="stepper" role="tablist" aria-label="Langkah pembuatan QR">
+          <button type="button" class="step-btn active" data-step="1"><span class="step-num">1</span><span data-i18n="gen.step1">Konten</span></button>
+          <button type="button" class="step-btn" data-step="2"><span class="step-num">2</span><span data-i18n="gen.step2">Desain</span></button>
+          <button type="button" class="step-btn" data-step="3"><span class="step-num">3</span><span data-i18n="gen.step3">Unduh</span></button>
+        </div>
+
+        <!-- STEP 1: KONTEN -->
+        <div id="step-1" class="step-panel">
+          <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:0.5rem;margin-bottom:0.85rem;padding:0.75rem;border-radius:var(--radius-md);background:var(--bg-surface-2);">
+            <label style="display:flex;align-items:center;gap:0.5rem;font-weight:600;cursor:pointer;">
+              <input type="checkbox" id="toggle-dynamic">
+              <span>Aktifkan QR Dinamis (Bisa diedit, dilacak, & slug kustom)</span>
+            </label>
+            <span id="dynamic-badge" class="badge badge-neutral">Statis (Offline)</span>
+          </div>
+
+          <div class="field" style="margin-bottom:0.85rem;">
+            <label for="qr-name">Nama QR (untuk arsip Anda)</label>
+            <input type="text" id="qr-name" class="input" placeholder="Contoh: Menu Kedai Kopi / Link Tugas Kelas">
+          </div>
+
+          <div class="field" style="margin-bottom:0.75rem;">
+            <label>Pilih Tipe Konten</label>
+            <div id="type-grid" class="type-grid"></div>
+          </div>
+
+          <!-- Form Dinamis Sesuai Tipe Konten -->
+          <div id="content-fields" class="form-grid" style="margin-top:1rem;"></div>
+
+          <!-- Pengaturan Lanjutan QR Dinamis -->
+          <div id="dynamic-options" style="display:none;margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border-color);" class="form-grid">
+            <h3 style="margin:0 0 0.75rem;font-size:1rem;">Pengaturan QR Dinamis</h3>
+            <div class="form-row form-row-2">
+              <div class="field">
+                <label for="dyn-slug">Slug Kustom (Opsional)</label>
+                <div style="display:flex;gap:0.4rem;">
+                  <input type="text" id="dyn-slug" class="input" placeholder="misal: menu-warung">
+                  <button type="button" id="btn-check-slug" class="btn btn-secondary btn-sm">Cek</button>
+                </div>
+                <span id="slug-status" class="field-hint">Kosongkan untuk kode acak 7 karakter.</span>
+              </div>
+              <div class="field">
+                <label for="dyn-password">Kata Sandi QR (Opsional)</label>
+                <input type="password" id="dyn-password" class="input" placeholder="Kosongkan jika publik">
+                <span class="field-hint">Catatan: di mode GitHub Pages, verifikasi dilakukan di sisi klien.</span>
+              </div>
+            </div>
+            <div class="form-row form-row-3">
+              <div class="field">
+                <label for="dyn-start">Jadwal Mulai</label>
+                <input type="datetime-local" id="dyn-start" class="input">
+              </div>
+              <div class="field">
+                <label for="dyn-end">Jadwal Berakhir</label>
+                <input type="datetime-local" id="dyn-end" class="input">
+              </div>
+              <div class="field">
+                <label for="dyn-limit">Batas Jumlah Scan (0 = tak terbatas)</label>
+                <input type="number" id="dyn-limit" class="input" min="0" value="0">
+              </div>
+            </div>
+            <details style="border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0.75rem;">
+              <summary style="font-weight:600;cursor:pointer;">Smart Link (Per OS / Bahasa / Jam) & A/B Rotasi</summary>
+              <div class="form-grid" style="margin-top:0.75rem;">
+                <div class="form-row form-row-2">
+                  <div class="field">
+                    <label for="rule-ios">URL Khusus iOS</label>
+                    <input type="url" id="rule-ios" class="input" placeholder="https://apps.apple.com/...">
+                  </div>
+                  <div class="field">
+                    <label for="rule-android">URL Khusus Android</label>
+                    <input type="url" id="rule-android" class="input" placeholder="https://play.google.com/...">
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="rule-ab">URL Rotasi A/B (50% traffic)</label>
+                  <input type="url" id="rule-ab" class="input" placeholder="https://contoh.com/varian-b">
+                </div>
+              </div>
+            </details>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;margin-top:1.25rem;">
+            <button type="button" class="btn btn-primary" data-go-step="2">Lanjut ke Desain →</button>
+          </div>
+        </div>
+
+        <!-- STEP 2: DESAIN -->
+        <div id="step-2" class="step-panel" hidden>
+          <div class="field" style="margin-bottom:1rem;">
+            <label>Template Siap Pakai</label>
+            <div id="preset-list" style="display:flex;flex-wrap:wrap;gap:0.45rem;"></div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-row form-row-2">
+              <div class="field">
+                <label for="des-dot-type">Pola Modul</label>
+                <select id="des-dot-type" class="select">
+                  <option value="rounded">Rounded (Halus)</option>
+                  <option value="dots">Dots (Titik Bulat)</option>
+                  <option value="square">Square (Persegi Klasik)</option>
+                  <option value="classy">Classy</option>
+                  <option value="classy-rounded">Classy Rounded</option>
+                  <option value="extra-rounded">Extra Rounded</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="des-ecc">Error Correction Level</label>
+                <select id="des-ecc" class="select">
+                  <option value="L">L (7% - paling renggang)</option>
+                  <option value="M" selected>M (15% - standar)</option>
+                  <option value="Q">Q (25% - tahan gores)</option>
+                  <option value="H">H (30% - wajib jika pakai logo)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row form-row-3">
+              <div class="field">
+                <label for="des-dot-color">Warna Modul</label>
+                <div style="display:flex;gap:0.4rem;align-items:center;">
+                  <input type="color" id="des-dot-color" class="color-input" value="#0f172a">
+                  <label style="font-weight:400;font-size:0.82rem;display:flex;align-items:center;gap:0.3rem;">
+                    <input type="checkbox" id="des-use-grad"> Gradasi
+                  </label>
+                </div>
+              </div>
+              <div class="field" id="grad-color-wrap" style="display:none;">
+                <label for="des-dot-color2">Warna Gradasi 2</label>
+                <input type="color" id="des-dot-color2" class="color-input" value="#4f46e5">
+              </div>
+              <div class="field">
+                <label for="des-bg-color">Warna Latar</label>
+                <div style="display:flex;gap:0.4rem;align-items:center;">
+                  <input type="color" id="des-bg-color" class="color-input" value="#ffffff">
+                  <label style="font-weight:400;font-size:0.82rem;display:flex;align-items:center;gap:0.3rem;">
+                    <input type="checkbox" id="des-bg-trans"> Transparan
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row form-row-2">
+              <div class="field">
+                <label for="des-eye-sq">Bentuk Mata Luar</label>
+                <select id="des-eye-sq" class="select">
+                  <option value="extra-rounded">Extra Rounded</option>
+                  <option value="square">Square</option>
+                  <option value="dot">Dot</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="des-eye-dot">Bentuk Mata Dalam</label>
+                <select id="des-eye-dot" class="select">
+                  <option value="dot">Dot</option>
+                  <option value="square">Square</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row form-row-2">
+              <div class="field">
+                <label for="des-logo-preset">Logo Tengah Bawaan / Unggah</label>
+                <select id="des-logo-preset" class="select">
+                  <option value="none">Tanpa Logo</option>
+                  <option value="wa">WhatsApp</option>
+                  <option value="ig">Instagram</option>
+                  <option value="link">Tautan</option>
+                  <option value="store">Toko UMKM</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="des-logo-file">Atau Unggah Logo (PNG/SVG/JPG)</label>
+                <input type="file" id="des-logo-file" class="input" accept="image/png,image/jpeg,image/svg+xml,image/webp">
+              </div>
+            </div>
+
+            <div class="form-row form-row-2">
+              <div class="field">
+                <label for="des-logo-size">Ukuran Logo (<span id="lbl-logo-size">32</span>%)</label>
+                <input type="range" id="des-logo-size" min="15" max="48" value="32">
+              </div>
+              <div class="field">
+                <label for="des-margin">Quiet Zone / Margin (<span id="lbl-margin">12</span>px)</label>
+                <input type="range" id="des-margin" min="0" max="32" value="12">
+              </div>
+            </div>
+
+            <div class="form-row form-row-2">
+              <div class="field">
+                <label for="des-frame-text">Teks Bingkai CTA</label>
+                <input type="text" id="des-frame-text" class="input" placeholder="Misal: SCAN SAYA / MENU">
+              </div>
+              <div class="field">
+                <label>Brand Kit</label>
+                <div style="display:flex;gap:0.4rem;">
+                  <button type="button" id="btn-save-brandkit" class="btn btn-secondary btn-sm">Simpan Brand Kit</button>
+                  <select id="select-brandkit" class="select" style="padding-block:0.35rem;">
+                    <option value="">Muat Brand Kit...</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;margin-top:1.25rem;">
+            <button type="button" class="btn btn-secondary" data-go-step="1">← Kembali</button>
+            <button type="button" class="btn btn-primary" data-go-step="3">Lanjut ke Unduh →</button>
+          </div>
+        </div>
+
+        <!-- STEP 3: UNDUH & SIMPAN -->
+        <div id="step-3" class="step-panel" hidden>
+          <div class="form-grid">
+            <div id="save-dynamic-box" class="card" style="background:var(--brand-primary-soft);border-color:var(--brand-primary);">
+              <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:0.75rem;">
+                <div>
+                  <strong>Simpan ke Dashboard "QR Saya"</strong>
+                  <div style="font-size:0.85rem;color:var(--text-secondary);">Wajib diklik untuk mengaktifkan tautan QR Dinamis & analitik.</div>
+                </div>
+                <button type="button" id="btn-save-qr" class="btn btn-primary">Simpan QR Sekarang</button>
+              </div>
+              <div id="saved-short-url-box" style="display:none;margin-top:0.75rem;font-size:0.9rem;">
+                Tautan aktif: <a id="saved-short-url" href="#" target="_blank" rel="noopener"></a>
+              </div>
+            </div>
+
+            <div class="form-row form-row-2">
+              <div class="field">
+                <label for="dl-format">Format Unduhan</label>
+                <select id="dl-format" class="select">
+                  <option value="png">PNG (Transparan / Standar)</option>
+                  <option value="svg">SVG (Vektor tajam untuk cetak besar)</option>
+                  <option value="jpg">JPG (Ringan untuk media sosial)</option>
+                  <option value="webp">WEBP (Modern & kecil)</option>
+                  <option value="pdf-a4">PDF A4 (Siap tempel)</option>
+                  <option value="pdf-a5">PDF A5</option>
+                  <option value="pdf-card">PDF Kartu Nama (90x55mm)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="dl-res">Resolusi (PNG/JPG/WEBP)</label>
+                <select id="dl-res" class="select">
+                  <option value="512">512 × 512 px (Web)</option>
+                  <option value="1024" selected>1024 × 1024 px (HD)</option>
+                  <option value="2048">2048 × 2048 px (Cetak Poster)</option>
+                  <option value="4096">4096 × 4096 px (Ultra HD)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-wrap:wrap;gap:0.65rem;">
+              <button type="button" id="btn-download-qr" class="btn btn-primary btn-lg">Unduh QR Code</button>
+              <button type="button" id="btn-copy-qr" class="btn btn-secondary btn-lg">Salin Gambar</button>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:flex-start;margin-top:1.25rem;">
+            <button type="button" class="btn btn-secondary" data-go-step="2">← Kembali ke Desain</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- KOLOM KANAN: PRATINJAU STICKY & PENGECEK KETERBACAAN -->
+      <aside class="preview-sticky no-print">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+            <strong>Pratinjau Langsung</strong>
+            <span id="readability-badge" class="badge badge-success">Skor 100/100</span>
+          </div>
+
+          <div class="qr-preview-box">
+            <div class="qr-frame-preview" id="qr-frame-container">
+              <div id="qr-canvas-mount"></div>
+              <div id="qr-frame-cta" class="qr-frame-cta" style="display:none;"></div>
+            </div>
+          </div>
+
+          <div id="readability-panel" style="margin-top:0.85rem;font-size:0.84rem;">
+            <div style="display:flex;justify-content:space-between;color:var(--text-secondary);">
+              <span>Rasio Kontras: <strong id="lbl-contrast">21:1</strong></span>
+              <span>Cetak Min: <strong id="lbl-min-print">2.0 cm</strong></span>
+            </div>
+            <ul id="readability-issues" style="margin:0.5rem 0 0;padding-left:1.1rem;display:grid;gap:0.35rem;"></ul>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- MODE BULK CSV -> ZIP -->
+    <section id="panel-bulk" class="card no-print" hidden>
+      <h2 style="margin-top:0;">Generate QR Massal dari CSV → ZIP</h2>
+      <p style="color:var(--text-secondary);">Unggah file CSV dengan kolom <code>nama,konten</code> (contoh: <code>Meja 01,https://toko.id/meja/1</code>). Semua QR diproses langsung di browser dan dikemas menjadi satu file ZIP.</p>
+      <div class="form-row form-row-2" style="margin-bottom:1rem;">
+        <div class="field">
+          <label for="bulk-csv-file">Pilih File CSV</label>
+          <input type="file" id="bulk-csv-file" class="input" accept=".csv,text/csv">
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button type="button" id="btn-download-sample-csv" class="btn btn-secondary">Unduh Contoh CSV</button>
+        </div>
+      </div>
+      <div id="bulk-preview-info" style="margin-bottom:1rem;font-size:0.9rem;color:var(--text-secondary);"></div>
+      <button type="button" id="btn-run-bulk" class="btn btn-primary" disabled>Buat & Unduh ZIP</button>
+    </section>
+
+    <!-- MODE TEMPLATE CETAK -->
+    <section id="panel-print" hidden>
+      <div class="card no-print" style="margin-bottom:1rem;">
+        <h2 style="margin-top:0;">Template Cetak Siap Pakai</h2>
+        <div class="form-row form-row-3">
+          <div class="field">
+            <label for="print-template-type">Pilih Tata Letak</label>
+            <select id="print-template-type" class="select">
+              <option value="stickers">Lembar Stiker Grid (12 QR)</option>
+              <option value="tent">Tent Card Meja Bernomor (1–6)</option>
+              <option value="poster">Poster A4 Pengumuman</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="print-title">Judul / Nama Tempat</label>
+            <input type="text" id="print-title" class="input" value="Scan untuk Akses Cepat">
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button type="button" id="btn-trigger-print" class="btn btn-primary">Cetak / Simpan PDF</button>
+          </div>
+        </div>
+      </div>
+      <div id="print-sheet" class="card" style="background:#fff;color:#0f172a;"></div>
+    </section>
+
+    <!-- Floating Mobile Preview Bar -->
+    <div class="mobile-preview-bar no-print">
+      <div style="font-size:0.85rem;">
+        <strong>Skor QR:</strong> <span id="mobile-score-lbl">100/100</span>
+      </div>
+      <button type="button" id="btn-mobile-scroll-preview" class="btn btn-primary btn-sm">Lihat Pratinjau</button>
+    </div>
+  </main>
+
+  <footer id="app-footer"></footer>
+
+  <script type="module" src="./assets/js/generator.js"></script>
+</body>
+</html>

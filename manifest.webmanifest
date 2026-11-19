@@ -1,0 +1,18 @@
+{
+  "name": "Your QR Code — Generator & Platform QR Gratis",
+  "short_name": "Your QR Code",
+  "description": "Generator QR Code statis & dinamis gratis selamanya untuk Pelajar, Ormawa, Sekolah, dan UMKM.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#4f46e5",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "./assets/img/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

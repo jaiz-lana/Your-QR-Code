@@ -1,0 +1,31 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "firebase.blaze.json",
+      "functions/**",
+      "docs/**",
+      ".git/**",
+      "README.md",
+      "CONTRIBUTING.md"
+    ],
+    "rewrites": [
+      { "source": "/r/**", "destination": "/r.html" },
+      { "source": "/p/**", "destination": "/p.html" }
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(js|css|svg|png|webp)",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }]
+      }
+    ]
+  }
+}

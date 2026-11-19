@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Saya & Analitik — Your QR Code</title>
+  <meta name="color-scheme" content="light">
+  <link rel="icon" type="image/svg+xml" href="./assets/img/icon.svg">
+  <link rel="stylesheet" href="./assets/css/tokens.css">
+  <link rel="stylesheet" href="./assets/css/app.css">
+</head>
+<body>
+  <header id="app-navbar"></header>
+
+  <main class="container section" style="padding-top:1.75rem;">
+    <!-- Gate jika belum login -->
+    <section id="dash-auth-gate" class="card" style="max-width:520px;margin:2rem auto;text-align:center;padding:2.25rem;" hidden>
+      <h1 style="margin:0 0 0.5rem;font-family:var(--font-display);font-size:1.5rem;">Masuk untuk Mengakses "QR Saya"</h1>
+      <p style="color:var(--text-secondary);margin:0 0 1.5rem;">
+        Kelola QR Dinamis, pantau analitik scan, folder, dan workspace tim Anda. Untuk membuat QR Statis tanpa login, Anda dapat langsung menuju halaman Buat QR.
+      </p>
+      <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+        <button type="button" id="gate-login-btn" class="btn btn-primary btn-lg">Masuk / Daftar Akun</button>
+        <a href="./generator.html" class="btn btn-secondary btn-lg">Buat QR Tanpa Login</a>
+      </div>
+    </section>
+
+    <!-- Konten Dashboard (hanya tampil setelah masuk) -->
+    <div id="dash-content" hidden>
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1.5rem;">
+        <div>
+          <h1 style="margin:0;font-family:var(--font-display);font-size:1.65rem;">Dashboard "QR Saya"</h1>
+          <p id="user-status-lbl" style="margin:0.2rem 0 0;color:var(--text-secondary);font-size:0.9rem;"></p>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <a href="./generator.html" class="btn btn-primary">+ Buat QR Baru</a>
+        </div>
+      </div>
+
+      <!-- Ringkasan Atas -->
+      <div class="grid-3" style="margin-bottom:1.5rem;">
+        <div class="card">
+          <div style="font-size:0.85rem;color:var(--text-secondary);">Total QR Tersimpan</div>
+          <strong id="sum-total-qr" style="font-size:1.75rem;font-family:var(--font-display);">0</strong>
+        </div>
+        <div class="card">
+          <div style="font-size:0.85rem;color:var(--text-secondary);">Total Scan</div>
+          <strong id="sum-total-scan" style="font-size:1.75rem;font-family:var(--font-display);color:var(--brand-primary);">0</strong>
+        </div>
+        <div class="card">
+          <div style="font-size:0.85rem;color:var(--text-secondary);">QR Aktif</div>
+          <strong id="sum-active-qr" style="font-size:1.75rem;font-family:var(--font-display);color:var(--status-success);">0</strong>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button type="button" class="tab-btn active" data-dash-tab="list">Daftar QR</button>
+        <button type="button" class="tab-btn" data-dash-tab="folders">Folder & Proyek</button>
+        <button type="button" class="tab-btn" data-dash-tab="workspace">Workspace & Peran</button>
+        <button type="button" class="tab-btn" data-dash-tab="backup">Backup Data</button>
+      </div>
+
+      <!-- TAB DAFTAR QR -->
+      <section id="tab-list">
+        <div class="card" style="margin-bottom:1rem;">
+          <div class="form-row form-row-3">
+            <div class="field">
+              <label for="filter-search">Cari QR</label>
+              <input type="search" id="filter-search" class="input" placeholder="Cari nama atau kode...">
+            </div>
+            <div class="field">
+              <label for="filter-status">Status</label>
+              <select id="filter-status" class="select">
+                <option value="all">Semua Status</option>
+                <option value="active">Aktif</option>
+                <option value="paused">Dijeda</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filter-folder">Folder</label>
+              <select id="filter-folder" class="select">
+                <option value="all">Semua Folder</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-wrap card" style="padding:0;">
+          <table>
+            <thead>
+              <tr>
+                <th>Nama & Kode</th>
+                <th>Tipe</th>
+                <th>Status</th>
+                <th>Total Scan</th>
+                <th>Diubah</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="qr-table-body">
+              <tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Memuat daftar QR...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB FOLDER -->
+      <section id="tab-folders" class="card" hidden>
+        <h2 style="margin-top:0;">Folder / Proyek</h2>
+        <form id="form-add-folder" style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+          <input type="text" id="folder-name-input" class="input" style="max-width:300px;" placeholder="Nama folder baru (mis. Event Kampus)" required>
+          <button type="submit" class="btn btn-primary">Tambah Folder</button>
+        </form>
+        <div id="folder-list" class="grid-3"></div>
+      </section>
+
+      <!-- TAB WORKSPACE -->
+      <section id="tab-workspace" class="card" hidden>
+        <h2 style="margin-top:0;">Workspace & Kolaborasi Tim</h2>
+        <p style="color:var(--text-secondary);">Bagikan pengelolaan QR bersama pengurus OSIS, panitia ormawa, atau staf dengan peran Pemilik, Admin, Editor, dan Pelihat.</p>
+        <form id="form-add-workspace" style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+          <input type="text" id="ws-name-input" class="input" style="max-width:300px;" placeholder="Nama Workspace (mis. BEM Fakultas)" required>
+          <button type="submit" class="btn btn-primary">Buat Workspace</button>
+        </form>
+        <div id="workspace-list" class="grid-2"></div>
+      </section>
+
+      <!-- TAB BACKUP -->
+      <section id="tab-backup" class="card" hidden>
+        <h2 style="margin-top:0;">Backup & Ekspor Data</h2>
+        <p style="color:var(--text-secondary);">Unduh seluruh daftar QR Anda dalam format JSON atau CSV sebagai cadangan lokal.</p>
+        <div style="display:flex;gap:0.65rem;flex-wrap:wrap;">
+          <button type="button" id="btn-export-json" class="btn btn-primary">Ekspor Semua ke JSON</button>
+          <button type="button" id="btn-export-csv" class="btn btn-secondary">Ekspor Daftar ke CSV</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- MODAL ANALITIK -->
+  <dialog id="analytics-dialog" class="app-dialog dialog-lg" aria-labelledby="analytics-title" closedby="any">
+    <div class="dialog-header">
+      <h2 id="analytics-title">Analitik Scan</h2>
+      <button type="button" class="icon-btn" id="btn-close-analytics" aria-label="Tutup">✕</button>
+    </div>
+    <p style="font-size:0.84rem;color:var(--text-secondary);margin-top:0;">
+      Privasi terjaga: tidak menyimpan IP mentah & tanpa pelacakan iklan. Data dibaca dari ringkasan harian (<code>stats</code>) agar hemat kuota.
+    </p>
+    <div style="position:relative;height:260px;margin-bottom:1rem;">
+      <canvas id="analytics-chart"></canvas>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+      <div id="analytics-summary" style="font-size:0.9rem;font-weight:600;"></div>
+      <button type="button" id="btn-export-stats-csv" class="btn btn-secondary btn-sm">Ekspor CSV Analitik</button>
+    </div>
+  </dialog>
+
+  <!-- MODAL KONFIRMASI HAPUS -->
+  <dialog id="delete-dialog" class="app-dialog" aria-labelledby="del-title">
+    <div class="dialog-header">
+      <h2 id="del-title">Hapus QR Code?</h2>
+    </div>
+    <p id="del-msg" style="color:var(--text-secondary);margin-top:0;">QR yang dihapus tidak dapat dipulihkan dan tautan pendeknya akan berhenti bekerja.</p>
+    <form method="dialog" class="dialog-actions">
+      <button value="cancel" class="btn btn-secondary" autofocus>Batal</button>
+      <button value="confirm" class="btn btn-danger">Ya, Hapus</button>
+    </form>
+  </dialog>
+
+  <footer id="app-footer"></footer>
+
+  <script type="module" src="./assets/js/dashboard.js"></script>
+</body>
+</html>

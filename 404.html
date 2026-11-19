@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 Halaman Tidak Ditemukan — Your QR Code</title>
+  <meta name="robots" content="noindex">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" type="image/svg+xml" href="/assets/img/icon.svg">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/app.css">
+  <style>
+    .err-wrap {
+      min-height: calc(100dvh - 140px);
+      display: grid;
+      place-items: center;
+      padding: 2rem 1rem;
+    }
+    .err-card {
+      max-width: 540px;
+      width: 100%;
+      text-align: center;
+      padding: 2.5rem 1.75rem;
+      background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+    }
+    .err-code {
+      font-family: var(--font-display);
+      font-size: clamp(4rem, 12vw, 5.75rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      background: linear-gradient(135deg, #0078d4 0%, #0067c0 55%, #0ea5e9 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0.5rem 0;
+    }
+    .err-art {
+      width: 88px;
+      height: 88px;
+      margin: 0 auto 0.75rem;
+      animation: floatQr 3.2s ease-in-out infinite;
+    }
+    @keyframes floatQr {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+  </style>
+</head>
+<body>
+  <main class="err-wrap">
+    <section class="err-card">
+      <div class="err-art" aria-hidden="true">
+        <svg viewBox="0 0 128 128" width="88" height="88">
+          <defs>
+            <linearGradient id="errGrad404" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0078d4"/>
+              <stop offset="100%" stop-color="#0ea5e9"/>
+            </linearGradient>
+          </defs>
+          <rect x="14" y="14" width="38" height="38" rx="8" fill="none" stroke="url(#errGrad404)" stroke-width="9"/>
+          <rect x="27" y="27" width="12" height="12" rx="3" fill="url(#errGrad404)"/>
+          <rect x="76" y="14" width="38" height="38" rx="8" fill="none" stroke="url(#errGrad404)" stroke-width="9"/>
+          <rect x="89" y="27" width="12" height="12" rx="3" fill="url(#errGrad404)"/>
+          <rect x="14" y="76" width="38" height="38" rx="8" fill="none" stroke="url(#errGrad404)" stroke-width="9"/>
+          <rect x="27" y="89" width="12" height="12" rx="3" fill="url(#errGrad404)"/>
+          <path d="M78 78 L110 110 M110 78 L78 110" stroke="#c42b1c" stroke-width="10" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="badge badge-primary">Kode Eror 404 • Tidak Ditemukan</span>
+      <h1 class="err-code">404</h1>
+      <h2 style="margin:0 0 0.5rem;font-family:var(--font-display);font-size:1.3rem;">Jalur yang Anda tuju tidak ditemukan</h2>
+      <p style="color:var(--text-secondary);margin:0 0 1.75rem;font-size:0.95rem;">
+        Tautan mungkin salah ketik, sudah dipindahkan, atau QR Code tersebut belum tersedia.
+      </p>
+      <div style="display:flex;gap:0.65rem;justify-content:center;flex-wrap:wrap;">
+        <a href="/index.html" class="btn btn-primary">Kembali ke Beranda</a>
+        <a href="/generator.html" class="btn btn-secondary">Buat QR Baru</a>
+        <button type="button" onclick="history.back()" class="btn btn-ghost">Halaman Sebelumnya</button>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
