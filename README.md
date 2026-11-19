@@ -4,6 +4,8 @@ Platform **QR Code Generator (Statis & Dinamis)**, **Halaman Hosting**, **Analit
 
 **100% Gratis Selamanya • Open Source (Lisensi MIT) • Tanpa Paywall • Tanpa Iklan.**
 
+🌐 **Live Demo:** https://your-qr-code-web.web.app/
+
 ## Fitur Utama
 - **QR Statis Offline (100% di Browser)**: URL, WhatsApp, WiFi, vCard, Teks, Email, SMS, Telepon, Lokasi Maps, Kalender iCal, Sosial Media, QRIS.
 - **QR Dinamis & Halaman Hosting**: Ubah tujuan kapan saja, slug kustom, jadwal aktif, batas jumlah scan, kata sandi opsional, Smart Link (iOS/Android), A/B rotasi, Menu Digital, Link-in-Bio, PDF, Event, Kupon, Katalog.
