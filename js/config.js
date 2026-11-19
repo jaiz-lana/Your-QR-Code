@@ -12,7 +12,7 @@ export const APP_CONFIG = {
    * - "pages": GitHub Pages (paket Spark gratis, redirect lewat r.html?c=KODE)
    * - "firebase": Firebase Hosting (URL bersih /r/KODE dan /p/SLUG)
    */
-  deployMode: 'pages',
+  deployMode: 'firebase',
 
   /**
    * Aktifkan jika menggunakan Cloud Functions (paket Firebase Blaze)
@@ -37,13 +37,12 @@ export const APP_CONFIG = {
    * (QR statis 100% jalan, data dinamis tersimpan di localStorage browser).
    */
   firebaseConfig: {
-    apiKey: '',
-    authDomain: '',
-    projectId: '',
-    storageBucket: '',
-    messagingSenderId: '',
-    appId: '',
-    measurementId: ''
+    apiKey: 'AIzaSyCsW2qa_R4ioDj8KKVDFjjb3XPMSIlq-Ls',
+    authDomain: 'your-qr-code-web.firebaseapp.com',
+    projectId: 'your-qr-code-web',
+    storageBucket: 'your-qr-code-web.firebasestorage.app',
+    messagingSenderId: '643399029589',
+    appId: '1:643399029589:web:27011d134fe4fa27b3d5dc'
   },
 
   /**
