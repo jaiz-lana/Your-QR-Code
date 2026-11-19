@@ -18,13 +18,24 @@
       "CONTRIBUTING.md"
     ],
     "rewrites": [
-      { "source": "/r/**", "destination": "/r.html" },
-      { "source": "/p/**", "destination": "/p.html" }
+      {
+        "source": "/r/**",
+        "destination": "/r.html"
+      },
+      {
+        "source": "/p/**",
+        "destination": "/p.html"
+      }
     ],
     "headers": [
       {
         "source": "**/*.@(js|css|svg|png|webp)",
-        "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }]
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=86400"
+          }
+        ]
       }
     ]
   }
