@@ -261,7 +261,8 @@ export async function saveDynamicQr({
     kode = generateShortCode(7);
   }
 
-  const passwordHash = password ? await sha256Hex(password) : '';
+  // Gunakan salt berbasis kode agar passwordHash tahan terhadap rainbow table
+  const passwordHash = password ? await sha256Hex(`${kode}:${password}`) : '';
 
   if (!ctx) {
     const qrs = readLocal('qrcodes');
@@ -624,7 +625,9 @@ export async function saveUserCollection(colName, id, payload) {
   }
   const { doc, collection, setDoc, serverTimestamp } = ctx.fsMod;
   const ref = id ? doc(ctx.db, colName, id) : doc(collection(ctx.db, colName));
-  await setDoc(ref, { ownerUid, ...payload, diubah: serverTimestamp() }, { merge: true });
+  const payloadWithTs = { ownerUid, ...payload, diubah: serverTimestamp() };
+  if (!id) payloadWithTs.dibuat = serverTimestamp();
+  await setDoc(ref, payloadWithTs, { merge: true });
   return ref.id;
 }
 

@@ -31,7 +31,7 @@
   </main>
 
   <script type="module">
-    import { resolveLink, recordScan } from './js/api.js';
+    import { getLinkStats, resolveLink, recordScan } from './js/api.js';
     import { getDeviceMeta, isSuspiciousUrl, sanitizeUrl, sha256Hex } from './assets/js/utils.js';
 
     const statusEl = document.getElementById('redirect-status');
@@ -158,6 +158,19 @@
         return;
       }
 
+      if (link.batasScan && Number(link.batasScan) > 0) {
+        try {
+          const statsRows = await getLinkStats(kode);
+          const totalSoFar = statsRows.reduce((s, r) => s + (r.total || 0), 0);
+          if (totalSoFar >= Number(link.batasScan)) {
+            showPaused(link.pesanDijeda || 'Batas jumlah scan untuk QR Code ini telah tercapai.');
+            return;
+          }
+        } catch {
+          // Abaikan jika stats tidak dapat dibaca publik
+        }
+      }
+
       const meta = getDeviceMeta();
 
       if (link.passwordHash) {
@@ -167,8 +180,9 @@
         pwForm.addEventListener('submit', async (e) => {
           e.preventDefault();
           const val = document.getElementById('qr-pw-input').value;
-          const hashed = await sha256Hex(val);
-          if (hashed === link.passwordHash) {
+          const saltedHash = await sha256Hex(`${kode}:${val}`);
+          const legacyHash = await sha256Hex(val);
+          if (saltedHash === link.passwordHash || legacyHash === link.passwordHash) {
             pwForm.style.display = 'none';
             await proceed(kode, link, meta);
           } else {
